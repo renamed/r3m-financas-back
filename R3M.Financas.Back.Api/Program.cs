@@ -66,3 +66,7 @@ app.UseCors("AllowAll");
 app.MapControllers();
 
 app.Run();
+
+public partial class Program
+{   
+}

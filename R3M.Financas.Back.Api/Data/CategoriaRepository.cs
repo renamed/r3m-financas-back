@@ -18,36 +18,28 @@ public class CategoriaRepository : ICategoriaRepository
     public async Task<IReadOnlyList<CategoriaResponse>> ListAsync()
     {
         string sql = """
-                        WITH RECURSIVE categoria_hierarchy AS (
-                -- Seleciona as categorias raiz (onde parent_id é NULL)
+               WITH RECURSIVE categoria_hierarchy AS (               
                 SELECT
                     c.id,
                     c.nome,
                     c.parent_id,
                     c.nome::text AS caminho,
-                    tc.nome as tipo_categoria,
                     1 AS nivel
                 FROM
                     public.categorias c
-            	INNER JOIN
-            		tipo_categoria tc on c.tipo_categoria_id = tc.id 
                 WHERE
                     parent_id IS null 
 
                 UNION ALL
-
-                -- Junta as categorias filhas recursivamente
+                
                 SELECT
                     c.id,
                     c.nome,
                     c.parent_id,
                     ch.caminho || ' -> ' || c.nome AS caminho,
-                    tc.nome as tipo_categoria,
                     ch.nivel + 1 AS nivel
                 FROM
                     public.categorias c
-                INNER JOIN
-            		tipo_categoria tc on c.tipo_categoria_id = tc.id 
                 INNER JOIN
                     categoria_hierarchy ch ON c.parent_id = ch.id
             )
