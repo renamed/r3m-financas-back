@@ -1,0 +1,38 @@
+assembly-versioning-scheme: MajorMinorPatch
+assembly-file-versioning-scheme: MajorMinorPatch
+tag-prefix: '[vV]?'
+version-in-branch-pattern: (?<version>[vV]?\d+(\.\d+)?(\.\d+)?).*
+major-version-bump-message: '^(feat!|fix!|major):.*'
+minor-version-bump-message: '^feat:.*'
+patch-version-bump-message: '^(build|chore|ci|docs|fix|perf|refactor|revert|style|test):.*'
+no-bump-message: \+semver:\s?(none|skip)
+tag-pre-release-weight: 60000
+commit-date-format: yyyy-MM-dd
+merge-message-formats: {}
+update-build-number: true
+semantic-version-format: Strict
+commit-message-incrementing: Enabled
+mode: ContinuousDeployment
+increment: Inherit
+label: ''
+
+branches:
+  main:
+    regex: ^main$
+    mode: ContinuousDeployment
+    increment: Patch
+    label: ''
+    track-merge-target: false
+    track-merge-message: true
+    prevent-increment:
+      of-merged-branch: false
+      when-current-commit-tagged: false
+    source-branches: []
+    is-source-branch-for: []
+    tracks-release-branches: false
+    is-release-branch: false
+    is-main-branch: true
+    pre-release-weight: 55000
+
+ignore:
+  sha: []
