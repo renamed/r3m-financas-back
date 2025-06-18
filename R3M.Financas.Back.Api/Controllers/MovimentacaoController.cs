@@ -21,10 +21,10 @@ public class MovimentacaoController : ControllerBase
         this.categoriaRepository = categoriaRepository;
     }
 
-    [HttpGet("{instituicaoId:guid}")]
-    public async Task<IActionResult> ListarAsync(Guid instituicaoId)
+    [HttpGet("{instituicaoId:guid}/{periodoId:guid}")]
+    public async Task<IActionResult> ListarAsync(Guid instituicaoId, Guid periodoId)
     {
-        var movimentacoes = await movimentacaoRepository.ListarAsync(instituicaoId);
+        var movimentacoes = await movimentacaoRepository.ListarAsync(instituicaoId, periodoId);
         return Ok(movimentacoes);
     }
 

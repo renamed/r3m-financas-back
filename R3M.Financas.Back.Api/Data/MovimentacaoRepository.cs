@@ -2,7 +2,6 @@
 using R3M.Financas.Back.Api.Dto;
 using R3M.Financas.Back.Api.Interfaces;
 using System.Data;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace R3M.Financas.Back.Api.Data;
 
@@ -15,7 +14,7 @@ public class MovimentacaoRepository : IMovimentacaoRepository
         this.dbConnection = dbConnection;
     }
 
-    public async Task<IReadOnlyList<MovimentacaoResponse>> ListarAsync(Guid instituicaoId)
+    public async Task<IReadOnlyList<MovimentacaoResponse>> ListarAsync(Guid instituicaoId, Guid periodoId)
     {
         string sql = """
         SELECT
@@ -47,7 +46,7 @@ public class MovimentacaoRepository : IMovimentacaoRepository
             periodos p ON m.periodo_id = p.id
         WHERE
             i.id = @InstituicaoId
-            AND m.data = (SELECT MAX(data) FROM movimentacoes WHERE instituicao_id = @InstituicaoId)
+            AND p.id = @PeriodoId
     """;
 
         if (dbConnection.State != ConnectionState.Open)
@@ -69,7 +68,7 @@ public class MovimentacaoRepository : IMovimentacaoRepository
                 mov.Periodo = per;
                 return mov;
             },
-            new { InstituicaoId = instituicaoId },
+            new { InstituicaoId = instituicaoId, PeriodoId = periodoId },
             splitOn: "InstituicaoId,CategoriaId,PeriodoId"
         );
 
