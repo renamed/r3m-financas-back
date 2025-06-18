@@ -34,6 +34,7 @@ public class MovimentacaoControllerUnitTests
     {
         // Arrange
         var instituicaoId = Guid.NewGuid();
+        var periodoId = Guid.NewGuid();
         var expected = new List<MovimentacaoResponse>
             {
                 new MovimentacaoResponse
@@ -48,10 +49,10 @@ public class MovimentacaoControllerUnitTests
                 }
             };
 
-        _mockMovRepo.Setup(repo => repo.ListarAsync(instituicaoId)).ReturnsAsync(expected);
+        _mockMovRepo.Setup(repo => repo.ListarAsync(instituicaoId, periodoId)).ReturnsAsync(expected);
 
         // Act
-        var result = await _controller.ListarAsync(instituicaoId);
+        var result = await _controller.ListarAsync(instituicaoId, periodoId);
 
         // Assert
         var ok = Assert.IsType<OkObjectResult>(result);
