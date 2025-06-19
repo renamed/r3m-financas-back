@@ -6,4 +6,5 @@ public class InstituicaoResponse
     public string Nome { get; set; }
     public decimal Saldo { get; set; }
     public bool Credito { get; set; }
+    public decimal? LimiteCredito { get; set; }
 }

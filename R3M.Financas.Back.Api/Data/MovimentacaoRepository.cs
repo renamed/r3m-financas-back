@@ -27,6 +27,7 @@ public class MovimentacaoRepository : IMovimentacaoRepository
             i.nome AS Nome,
             i.saldo_atual AS Saldo,
             i.instituicao_credito AS Credito,
+            i.limite_credito as LimiteCredito,
 
             c.id AS CategoriaId,
             c.nome AS Nome,

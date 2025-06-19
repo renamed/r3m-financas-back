@@ -21,7 +21,8 @@ public class InstituicaoRepository : IInstituicaoRepository
                 id as InstituicaoId, 
                 nome as Nome, 
                 saldo_atual as Saldo, 
-                instituicao_credito as Credito
+                instituicao_credito as Credito,
+                limite_credito as LimiteCredito
             FROM 
                 instituicoes";
         if (dbConnection.State != ConnectionState.Open)
@@ -38,7 +39,8 @@ public class InstituicaoRepository : IInstituicaoRepository
                 id as InstituicaoId, 
                 nome as Nome, 
                 saldo_atual as Saldo, 
-                instituicao_credito as Credito
+                instituicao_credito as Credito,
+                limite_credito as LimiteCredito
             FROM 
                 instituicoes
             WHERE
