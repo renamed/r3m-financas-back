@@ -134,6 +134,59 @@ public class MovimentacaoControllerUnitTests
         _mockInstRepo.Verify(r => r.AtualizarSaldoAsync(request.InstituicaoId, saldoInicial + expectedDelta), Times.Once);
     }
 
+    [Fact]
+    public async Task AdicionarAsync_ShouldReturnCreated_WithNoBody()
+    {
+        // Arrange
+        var request = CriarMovimentacaoRequest();
+        var saldoInicial = 200m;
+        _mockPeriodoRepo.Setup(r => r.ObterAsync(request.PeriodoId)).ReturnsAsync(new PeriodoResponse());
+        _mockInstRepo.Setup(r => r.ObterAsync(request.InstituicaoId)).ReturnsAsync(new InstituicaoResponse
+        {
+            InstituicaoId = request.InstituicaoId,
+            Saldo = saldoInicial,
+            Credito = false
+        });
+        _mockCatRepo.Setup(r => r.ObterAsync(request.CategoriaId)).ReturnsAsync(CriarCategoriaResponse());
+
+        // Act
+        var result = await _controller.AdicionarAsync(request);
+
+        // Assert
+        var created = Assert.IsType<CreatedResult>(result);
+        Assert.Null(created.Value); // Created() sem parâmetros retorna Value nulo
+    }
+
+    [Fact]
+    public async Task DeletarAsync_ShouldReturnNotFound_WhenMovimentacaoNotFound()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        _mockMovRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync((MovimentacaoResponse?)null);
+
+        // Act
+        var result = await _controller.DeletarAsync(id);
+
+        // Assert
+        var notFound = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal("movimentacao", notFound.Value);
+    }
+
+    [Fact]
+    public async Task DeletarAsync_ShouldReturnNoContent_WhenMovimentacaoExists()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        _mockMovRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync(new MovimentacaoResponse { MovimentacaoId = id });
+
+        // Act
+        var result = await _controller.DeletarAsync(id);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+        _mockMovRepo.Verify(r => r.DeletarAsync(id), Times.Once);
+    }
+
     private MovimentacaoRequest CriarMovimentacaoRequest()
     {
         return new MovimentacaoRequest

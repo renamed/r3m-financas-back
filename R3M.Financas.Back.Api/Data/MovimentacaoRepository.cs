@@ -87,4 +87,76 @@ public class MovimentacaoRepository : IMovimentacaoRepository
         }
         await dbConnection.ExecuteAsync(sql, movimentacao);
     }
+
+    public async Task<MovimentacaoResponse?> ObterAsync(Guid id)
+    {
+        string sql = """
+        SELECT
+            m.id AS MovimentacaoId,
+            m.data AS Data,
+            m.descricao AS Descricao,
+            m.valor AS Valor,
+
+            i.id AS InstituicaoId,
+            i.nome AS Nome,
+            i.saldo_atual AS Saldo,
+            i.instituicao_credito AS Credito,
+            i.limite_credito as LimiteCredito,
+
+            c.id AS CategoriaId,
+            c.nome AS Nome,
+            c.parent_id AS ParentId,
+
+            p.id AS PeriodoId,
+            p.nome AS Nome,
+            p.inicio AS Inicio,
+            p.fim AS Fim
+        FROM
+            movimentacoes m
+        INNER JOIN
+            instituicoes i ON m.instituicao_id = i.id
+        INNER JOIN
+            categorias c ON m.categoria_id = c.id
+        INNER JOIN
+            periodos p ON m.periodo_id = p.id
+        WHERE
+            m.id = @MovimentacaoId
+    """;
+
+        if (dbConnection.State != ConnectionState.Open)
+        {
+            dbConnection.Open();
+        }
+
+        var result = await dbConnection.QueryAsync<
+            MovimentacaoResponse,
+            InstituicaoResponse,
+            CategoriaResponse,
+            PeriodoResponse,
+            MovimentacaoResponse>(
+            sql,
+            (mov, inst, cat, per) =>
+            {
+                mov.Instituicao = inst;
+                mov.Categoria = cat;
+                mov.Periodo = per;
+                return mov;
+            },
+            new { MovimentacaoId = id },
+            splitOn: "InstituicaoId,CategoriaId,PeriodoId"
+        );
+
+        return result.FirstOrDefault();
+    }
+
+    public async Task DeletarAsync(Guid id)
+    {
+        string sql = "DELETE FROM public.movimentacoes WHERE id = @MovimentacaoId";
+        if (dbConnection.State != ConnectionState.Open)
+        {
+            dbConnection.Open();
+        }
+
+        await dbConnection.ExecuteAsync(sql, new { MovimentacaoId = id });
+    }
 }
