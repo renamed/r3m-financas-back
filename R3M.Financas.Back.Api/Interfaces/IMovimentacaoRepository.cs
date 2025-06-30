@@ -6,4 +6,6 @@ public interface IMovimentacaoRepository
 {
     Task AdicionarAsync(MovimentacaoRequest movimentacao);
     Task<IReadOnlyList<MovimentacaoResponse>> ListarAsync(Guid instituicaoId, Guid periodoId);
+    Task<MovimentacaoResponse?> ObterAsync(Guid id);
+    Task DeletarAsync(Guid id);
 }

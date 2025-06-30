@@ -49,4 +49,22 @@ public class MovimentacaoController : ControllerBase
         return Created();
     }
 
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeletarAsync(Guid id)
+    {
+        var movimentacao = await movimentacaoRepository.ObterAsync(id);
+        if (movimentacao is null) return NotFound(nameof(movimentacao));
+
+        var instituicao = await instituicaoRepository.ObterAsync(movimentacao.Instituicao.InstituicaoId);
+        if (instituicao is null) return NotFound(nameof(instituicao));
+
+        var novoSaldo = instituicao.Saldo;
+        novoSaldo += instituicao.Credito ? movimentacao.Valor : -movimentacao.Valor;
+
+        await movimentacaoRepository.DeletarAsync(id);
+        await instituicaoRepository.AtualizarSaldoAsync(instituicao.InstituicaoId, novoSaldo);
+
+        return Ok();
+    }
+
 }
