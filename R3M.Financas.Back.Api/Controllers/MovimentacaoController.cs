@@ -55,9 +55,16 @@ public class MovimentacaoController : ControllerBase
         var movimentacao = await movimentacaoRepository.ObterAsync(id);
         if (movimentacao is null) return NotFound(nameof(movimentacao));
 
-        await movimentacaoRepository.DeletarAsync(id);
+        var instituicao = await instituicaoRepository.ObterAsync(movimentacao.Instituicao.InstituicaoId);
+        if (instituicao is null) return NotFound(nameof(instituicao));
 
-        return NoContent();
+        var novoSaldo = instituicao.Saldo;
+        novoSaldo += instituicao.Credito ? movimentacao.Valor : -movimentacao.Valor;
+
+        await movimentacaoRepository.DeletarAsync(id);
+        await instituicaoRepository.AtualizarSaldoAsync(instituicao.InstituicaoId, novoSaldo);
+
+        return Ok();
     }
 
 }
