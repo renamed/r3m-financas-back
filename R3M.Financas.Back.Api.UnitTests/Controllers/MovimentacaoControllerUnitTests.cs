@@ -177,14 +177,81 @@ public class MovimentacaoControllerUnitTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        _mockMovRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync(new MovimentacaoResponse { MovimentacaoId = id });
+        var instituicaoId = Guid.NewGuid();
+        var mov = new MovimentacaoResponse {
+            MovimentacaoId = id,
+            Valor = 100,
+            Instituicao = new InstituicaoResponse { InstituicaoId = instituicaoId }
+        };
+        var inst = new InstituicaoResponse {
+            InstituicaoId = instituicaoId,
+            Saldo = 500,
+            Credito = false
+        };
+        _mockMovRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync(mov);
+        _mockInstRepo.Setup(r => r.ObterAsync(instituicaoId)).ReturnsAsync(inst);
 
         // Act
         var result = await _controller.DeletarAsync(id);
 
         // Assert
-        Assert.IsType<NoContentResult>(result);
+        Assert.IsType<OkResult>(result);
         _mockMovRepo.Verify(r => r.DeletarAsync(id), Times.Once);
+        _mockInstRepo.Verify(r => r.AtualizarSaldoAsync(instituicaoId, 400), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeletarAsync_ShouldReturnNotFound_WhenInstituicaoNotFound()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var mov = new MovimentacaoResponse
+        {
+            MovimentacaoId = id,
+            Valor = 100,
+            Instituicao = new InstituicaoResponse { InstituicaoId = Guid.NewGuid() }
+        };
+        _mockMovRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync(mov);
+        _mockInstRepo.Setup(r => r.ObterAsync(mov.Instituicao.InstituicaoId)).ReturnsAsync((InstituicaoResponse?)null);
+
+        // Act
+        var result = await _controller.DeletarAsync(id);
+
+        // Assert
+        var notFound = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal("instituicao", notFound.Value);
+    }
+
+    [Theory]
+    [InlineData(true, 100)] // Credito: saldo + valor
+    [InlineData(false, -100)] // Debito: saldo - valor
+    public async Task DeletarAsync_ShouldUpdateSaldoAndReturnOk_WhenMovimentacaoAndInstituicaoExist(bool isCredito, decimal expectedDelta)
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var mov = new MovimentacaoResponse
+        {
+            MovimentacaoId = id,
+            Valor = 100,
+            Instituicao = new InstituicaoResponse { InstituicaoId = Guid.NewGuid() }
+        };
+        var saldoInicial = 500m;
+        var inst = new InstituicaoResponse
+        {
+            InstituicaoId = mov.Instituicao.InstituicaoId,
+            Saldo = saldoInicial,
+            Credito = isCredito
+        };
+        _mockMovRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync(mov);
+        _mockInstRepo.Setup(r => r.ObterAsync(mov.Instituicao.InstituicaoId)).ReturnsAsync(inst);
+
+        // Act
+        var result = await _controller.DeletarAsync(id);
+
+        // Assert
+        var ok = Assert.IsType<OkResult>(result);
+        _mockMovRepo.Verify(r => r.DeletarAsync(id), Times.Once);
+        _mockInstRepo.Verify(r => r.AtualizarSaldoAsync(inst.InstituicaoId, saldoInicial + expectedDelta), Times.Once);
     }
 
     private MovimentacaoRequest CriarMovimentacaoRequest()
