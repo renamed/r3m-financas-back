@@ -44,7 +44,7 @@ builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 builder.Services.AddScoped<IPeriodoRepository, PeriodoRepository>();
 builder.Services.AddScoped<IInstituicaoRepository, InstituicaoRepository>();
 builder.Services.AddScoped<IMovimentacaoRepository, MovimentacaoRepository>();
-builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+
 
 SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
 
