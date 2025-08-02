@@ -1,4 +1,4 @@
-﻿using Dapper;
+﻿using Microsoft.EntityFrameworkCore;
 using R3M.Financas.Back.Api.Dto;
 using R3M.Financas.Back.Api.Interfaces;
 using System.Data;
@@ -7,51 +7,35 @@ namespace R3M.Financas.Back.Api.Data;
 
 public class PeriodoRepository : IPeriodoRepository
 {
-    private readonly IDbConnection dbConnection;
+    private readonly FinancasContext financasContext;
 
-    public PeriodoRepository(IDbConnection dbConnection)
+    public PeriodoRepository(FinancasContext financasContext)
     {
-        this.dbConnection = dbConnection;
+        this.financasContext = financasContext;
     }
 
     public async Task<IReadOnlyList<PeriodoResponse>> ListarAsync(int anoBase)
     {
-        string sql = @"
-            SELECT 
-                id as PeriodoId, 
-                nome as Nome,  
-                inicio as Inicio, 
-                fim as Fim
-            FROM 
-                periodos 
-            WHERE 
-                DATE_PART('year', inicio) = @anoBase
-                or DATE_PART('year', fim) = @anoBase";
-
-        if (dbConnection.State != ConnectionState.Open)
+        var periodos = await financasContext.Periodos.Where(p => p.Inicio.Year == anoBase || p.Fim.Year == anoBase).ToListAsync();
+        return [.. periodos.Select(p => new PeriodoResponse
         {
-            dbConnection.Open();
-        }
-        return [.. await dbConnection.QueryAsync<PeriodoResponse>(sql, new { anoBase })];
+            PeriodoId = p.Id,
+            Nome = p.Nome,
+            Inicio = p.Inicio,
+            Fim = p.Fim
+        })];
+
     }
 
     public async Task<PeriodoResponse?> ObterAsync(Guid id)
     {
-        string sql = @"
-            SELECT 
-                id as PeriodoId, 
-                nome as Nome,  
-                inicio as Inicio, 
-                fim as Fim
-            FROM 
-                periodos 
-            WHERE 
-                id = @id";
-
-        if (dbConnection.State != ConnectionState.Open)
+        var periodo = await financasContext.Periodos.FindAsync(id);
+        return periodo == null ? null : new PeriodoResponse
         {
-            dbConnection.Open();
-        }
-        return await dbConnection.QueryFirstOrDefaultAsync<PeriodoResponse>(sql, new { id });
+            PeriodoId = periodo.Id,
+            Nome = periodo.Nome,
+            Inicio = periodo.Inicio,
+            Fim = periodo.Fim
+        };
     }
 }

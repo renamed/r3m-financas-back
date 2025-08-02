@@ -1,162 +1,120 @@
-﻿using Dapper;
+﻿using Microsoft.EntityFrameworkCore;
 using R3M.Financas.Back.Api.Dto;
 using R3M.Financas.Back.Api.Interfaces;
+using R3M.Financas.Back.Api.Modelos;
 using System.Data;
 
 namespace R3M.Financas.Back.Api.Data;
 
 public class MovimentacaoRepository : IMovimentacaoRepository
 {
-    private readonly IDbConnection dbConnection;
+    private readonly FinancasContext financasContext;
 
-    public MovimentacaoRepository(IDbConnection dbConnection)
+    public MovimentacaoRepository(FinancasContext financasContext)
     {
-        this.dbConnection = dbConnection;
+        this.financasContext = financasContext;
     }
 
     public async Task<IReadOnlyList<MovimentacaoResponse>> ListarAsync(Guid instituicaoId, Guid periodoId)
     {
-        string sql = """
-        SELECT
-            m.id AS MovimentacaoId,
-            m.data AS Data,
-            m.descricao AS Descricao,
-            m.valor AS Valor,
-
-            i.id AS InstituicaoId,
-            i.nome AS Nome,
-            i.saldo_atual AS Saldo,
-            i.instituicao_credito AS Credito,
-            i.limite_credito as LimiteCredito,
-
-            c.id AS CategoriaId,
-            c.nome AS Nome,
-            c.parent_id AS ParentId,
-
-            p.id AS PeriodoId,
-            p.nome AS Nome,
-            p.inicio AS Inicio,
-            p.fim AS Fim
-        FROM
-            movimentacoes m
-        INNER JOIN
-            instituicoes i ON m.instituicao_id = i.id
-        INNER JOIN
-            categorias c ON m.categoria_id = c.id
-        INNER JOIN
-            periodos p ON m.periodo_id = p.id
-        WHERE
-            i.id = @InstituicaoId
-            AND p.id = @PeriodoId
-    """;
-
-        if (dbConnection.State != ConnectionState.Open)
-        {
-            dbConnection.Open();
-        }
-
-        var result = await dbConnection.QueryAsync<
-            MovimentacaoResponse,
-            InstituicaoResponse,
-            CategoriaResponse,
-            PeriodoResponse,
-            MovimentacaoResponse>(
-            sql,
-            (mov, inst, cat, per) =>
+        return await financasContext
+            .Movimentacoes
+            .Include(i => i.Instituicao)
+            .Include(i => i.Categoria)
+            .Include(i => i.Periodo)
+            .Where(w => w.InstituicaoId == instituicaoId
+                    && w.PeriodoId == periodoId)
+            .Select(s => new MovimentacaoResponse
             {
-                mov.Instituicao = inst;
-                mov.Categoria = cat;
-                mov.Periodo = per;
-                return mov;
-            },
-            new { InstituicaoId = instituicaoId, PeriodoId = periodoId },
-            splitOn: "InstituicaoId,CategoriaId,PeriodoId"
-        );
-
-        return [.. result];
+                MovimentacaoId = s.Id,
+                Data = s.Data,
+                Descricao = s.Descricao,
+                Valor = s.Valor,
+                Categoria = new CategoriaResponse
+                {
+                    CategoriaId = s.Categoria.Id,
+                    Nome = s.Categoria.Nome,
+                    ParentId = s.Categoria.ParentId
+                },
+                Instituicao = new InstituicaoResponse
+                {
+                    InstituicaoId = s.Instituicao.Id,
+                    Nome = s.Instituicao.Nome,
+                    Credito = s.Instituicao.InstituicaoCredito,
+                    LimiteCredito = s.Instituicao.LimiteCredito,
+                    Saldo = s.Instituicao.SaldoAtual
+                },
+                Periodo = new PeriodoResponse
+                {
+                    PeriodoId = s.Periodo.Id,
+                    Nome = s.Periodo.Nome,
+                    Inicio = s.Periodo.Inicio,
+                    Fim = s.Periodo.Fim
+                }
+            }).ToListAsync();
     }
 
     public async Task AdicionarAsync(MovimentacaoRequest movimentacao)
     {
-        string sql = "INSERT INTO public.movimentacoes (data, descricao, valor, instituicao_id, periodo_id, categoria_id) " +
-            "VALUES(@Data, @Descricao, @Valor, @InstituicaoId, @PeriodoId, @CategoriaId)";
-
-        if (dbConnection.State != ConnectionState.Open)
+        var novaMovimentacao = new Movimentacao
         {
-            dbConnection.Open();
-        }
-        await dbConnection.ExecuteAsync(sql, movimentacao);
+            Data = movimentacao.Data,
+            Descricao = movimentacao.Descricao,
+            Valor = movimentacao.Valor,
+            CategoriaId = movimentacao.CategoriaId,
+            PeriodoId = movimentacao.PeriodoId,
+            InstituicaoId = movimentacao.InstituicaoId
+        };
+
+        financasContext.Movimentacoes.Add(novaMovimentacao);
+        await financasContext.SaveChangesAsync();
     }
 
     public async Task<MovimentacaoResponse?> ObterAsync(Guid id)
     {
-        string sql = """
-        SELECT
-            m.id AS MovimentacaoId,
-            m.data AS Data,
-            m.descricao AS Descricao,
-            m.valor AS Valor,
+        var movimentacao = await financasContext
+            .Movimentacoes
+            .Include(i => i.Instituicao)
+            .Include(i => i.Categoria)
+            .Include(i => i.Periodo)
+            .FirstOrDefaultAsync(w => w.Id == id);
 
-            i.id AS InstituicaoId,
-            i.nome AS Nome,
-            i.saldo_atual AS Saldo,
-            i.instituicao_credito AS Credito,
-            i.limite_credito as LimiteCredito,
-
-            c.id AS CategoriaId,
-            c.nome AS Nome,
-            c.parent_id AS ParentId,
-
-            p.id AS PeriodoId,
-            p.nome AS Nome,
-            p.inicio AS Inicio,
-            p.fim AS Fim
-        FROM
-            movimentacoes m
-        INNER JOIN
-            instituicoes i ON m.instituicao_id = i.id
-        INNER JOIN
-            categorias c ON m.categoria_id = c.id
-        INNER JOIN
-            periodos p ON m.periodo_id = p.id
-        WHERE
-            m.id = @MovimentacaoId
-    """;
-
-        if (dbConnection.State != ConnectionState.Open)
+        return movimentacao == null ? null : new MovimentacaoResponse
         {
-            dbConnection.Open();
-        }
-
-        var result = await dbConnection.QueryAsync<
-            MovimentacaoResponse,
-            InstituicaoResponse,
-            CategoriaResponse,
-            PeriodoResponse,
-            MovimentacaoResponse>(
-            sql,
-            (mov, inst, cat, per) =>
+            MovimentacaoId = movimentacao.Id,
+            Data = movimentacao.Data,
+            Descricao = movimentacao.Descricao,
+            Valor = movimentacao.Valor,
+            Categoria = new CategoriaResponse
             {
-                mov.Instituicao = inst;
-                mov.Categoria = cat;
-                mov.Periodo = per;
-                return mov;
+                CategoriaId = movimentacao.Categoria.Id,
+                Nome = movimentacao.Categoria.Nome,
+                ParentId = movimentacao.Categoria.ParentId
             },
-            new { MovimentacaoId = id },
-            splitOn: "InstituicaoId,CategoriaId,PeriodoId"
-        );
-
-        return result.FirstOrDefault();
+            Instituicao = new InstituicaoResponse
+            {
+                InstituicaoId = movimentacao.Instituicao.Id,
+                Nome = movimentacao.Instituicao.Nome,
+                Credito = movimentacao.Instituicao.InstituicaoCredito,
+                LimiteCredito = movimentacao.Instituicao.LimiteCredito,
+                Saldo = movimentacao.Instituicao.SaldoAtual
+            },
+            Periodo = new PeriodoResponse
+            {
+                PeriodoId = movimentacao.Periodo.Id,
+                Nome = movimentacao.Periodo.Nome,
+                Inicio = movimentacao.Periodo.Inicio,
+                Fim = movimentacao.Periodo.Fim
+            }
+        };
     }
 
     public async Task DeletarAsync(Guid id)
     {
-        string sql = "DELETE FROM public.movimentacoes WHERE id = @MovimentacaoId";
-        if (dbConnection.State != ConnectionState.Open)
-        {
-            dbConnection.Open();
-        }
+        var movimentacao = await financasContext.Movimentacoes.FindAsync(id);
+        if (movimentacao == null) return;
 
-        await dbConnection.ExecuteAsync(sql, new { MovimentacaoId = id });
+        financasContext.Movimentacoes.Remove(movimentacao);
+        await financasContext.SaveChangesAsync();
     }
 }

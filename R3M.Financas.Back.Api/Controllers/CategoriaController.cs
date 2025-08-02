@@ -17,11 +17,19 @@ public class CategoriaController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> ListAsync([FromQuery] string? nome)
     {
-        var categorias = 
-            string.IsNullOrWhiteSpace(nome)                
-                ? await categoriaRepository.ListAsync()
-                : await categoriaRepository.SearchAsync(nome);
-        return Ok(categorias);
+        try
+        {
+            var categorias =
+                string.IsNullOrWhiteSpace(nome)
+                    ? await categoriaRepository.ListAsync()
+                    : await categoriaRepository.SearchAsync(nome);
+            return Ok(categorias);
+        }
+        catch (Exception ex)
+        {
+            // Log the exception (not shown here for brevity)
+            return StatusCode(500, "Internal server error: " + ex.Message);
+        }
     }
 
     [HttpGet("pai/{parentId:guid?}")]

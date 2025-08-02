@@ -1,0 +1,27 @@
+[
+  {
+    "Id": "08e1442c-a537-4f2c-9aaa-e63345e053cc",
+    "Nome": "Ourocard",
+    "SaldoInicial": -4500.00,
+    "SaldoAtual": -4500.00,
+    "DataSaldoInicial": "2023-01-01",
+    "InstituicaoCredito": true,
+    "LimiteCredito": -3000
+  },
+  {
+    "Id": "d2e81048-f5ec-49af-b053-30e61a4bafcd",
+    "Nome": "Banco do Brasil",
+    "SaldoInicial": 500000.00,
+    "SaldoAtual": 600000.00,
+    "DataSaldoInicial": "2023-01-01",
+    "InstituicaoCredito": false
+  },
+  {
+    "Id": "d2e81048-f5ec-49af-b053-30e61a4bafce",
+    "Nome": "Banco Bradesco",
+    "SaldoInicial": 0.0,
+    "SaldoAtual": 130.00,
+    "DataSaldoInicial": "2023-01-01",
+    "InstituicaoCredito": false
+  }
+]

@@ -1,18 +1,17 @@
-﻿using Dapper;
+﻿using Microsoft.EntityFrameworkCore;
 using R3M.Financas.Back.Api.Dto;
 using R3M.Financas.Back.Api.Interfaces;
 using System.Data;
-using System.Text;
 
 namespace R3M.Financas.Back.Api.Data;
 
 public class CategoriaRepository : ICategoriaRepository
 {
-    private readonly IDbConnection dbConnection;
+    private readonly FinancasContext financasContext;
 
-    public CategoriaRepository(IDbConnection dbConnection)
+    public CategoriaRepository(FinancasContext financasContext)
     {
-        this.dbConnection = dbConnection;
+        this.financasContext = financasContext;
     }
 
     public async Task<IReadOnlyList<CategoriaResponse>> ListAsync()
@@ -24,7 +23,8 @@ public class CategoriaRepository : ICategoriaRepository
                     c.nome,
                     c.parent_id,
                     c.nome::text AS caminho,
-                    1 AS nivel
+                    1 AS nivel,
+                    c.tipo_categoria_id as tipo_categoria_id
                 FROM
                     public.categorias c
                 WHERE
@@ -37,7 +37,8 @@ public class CategoriaRepository : ICategoriaRepository
                     c.nome,
                     c.parent_id,
                     ch.caminho || ' -> ' || c.nome AS caminho,
-                    ch.nivel + 1 AS nivel
+                    ch.nivel + 1 AS nivel,
+                    ch.tipo_categoria_id as tipo_categoria_id
                 FROM
                     public.categorias c
                 INNER JOIN
@@ -45,62 +46,70 @@ public class CategoriaRepository : ICategoriaRepository
             )
             -- Seleciona o resultado final, ordenado pelo caminho
             select
-            	id as CategoriaId,            	            	
-                caminho as Nome
+            	id as Id,            	            	
+                caminho as Nome,
+                parent_id as parent_id,
+                tipo_categoria_id as tipo_categoria_id            
             FROM
                 categoria_hierarchy
             ORDER BY
                 caminho
             """;
 
-        if (dbConnection.State != ConnectionState.Open)
+        var categorias = await financasContext.Categorias.FromSqlRaw(sql).ToListAsync();
+        return [.. categorias.Select(c => new CategoriaResponse
         {
-            dbConnection.Open();
-        }
-        return [.. await dbConnection
-            .QueryAsync<CategoriaResponse>(sql)];
+            CategoriaId = c.Id,
+            Nome = c.Nome,
+            ParentId = c.ParentId
+        })];
     }
 
     public async Task<IReadOnlyList<CategoriaResponse>> ListAsync(Guid? parentId)
     {
-        var sql = new StringBuilder("select id, nome, parent_id from categorias ");
-        if (parentId.HasValue)
-        {
-            sql.Append("where parent_id = @parentId");
-        }
-        else
-        {
-            sql.Append("where parent_id is null");
-        }
+        var categorias = parentId.HasValue
+            ? financasContext.Categorias.Where(c => c.ParentId == parentId.Value)
+            : financasContext.Categorias.Where(c => c.ParentId == null);
 
-        if (dbConnection.State != ConnectionState.Open)
-        {
-            dbConnection.Open();
-        }
-        return [.. await dbConnection
-            .QueryAsync<CategoriaResponse>(sql.ToString(), parentId)];
+        return [.. await categorias
+            .Select(c => new CategoriaResponse
+            {
+                CategoriaId = c.Id,
+                Nome = c.Nome,
+                ParentId = c.ParentId
+            })
+            .ToListAsync()];
     }
 
     public async Task<IReadOnlyList<CategoriaResponse>> SearchAsync(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
-        if (dbConnection.State != ConnectionState.Open)
-        {
-            dbConnection.Open();
-        }
-        return [.. await dbConnection
-            .QueryAsync<CategoriaResponse>("select id, nome, parent_id from categorias where unaccent(nome) ilike unaccent(@name)", new { name = $"%{name}%" })];
+
+        return await 
+            financasContext.Categorias
+                .Where(c => EF.Functions.ILike(
+                    EF.Functions.Unaccent(c.Nome),
+                    EF.Functions.Unaccent($"%{name}%")
+                ))
+                .Select(c => new CategoriaResponse
+                {
+                    CategoriaId = c.Id,
+                    Nome = c.Nome,
+                    ParentId = c.ParentId
+                }).ToListAsync();
     }
 
     public async Task<CategoriaResponse?> ObterAsync(Guid id)
     {
-        var sql = "select id, nome, parent_id from categorias where id = @id";
+        var categoria = await financasContext.Categorias
+            .FindAsync(id);
 
-        if (dbConnection.State != ConnectionState.Open)
+        return categoria == null ? null : new CategoriaResponse
         {
-            dbConnection.Open();
-        }
-        return await dbConnection.QueryFirstOrDefaultAsync<CategoriaResponse>(sql, new { id });
+            CategoriaId = categoria.Id,
+            Nome = categoria.Nome,
+            ParentId = categoria.ParentId
+        };
     }
 }

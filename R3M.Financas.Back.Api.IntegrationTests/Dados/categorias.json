@@ -1,0 +1,42 @@
+[
+  {
+    "id": "f18f6739-0862-4ebb-ad76-1ea6753b3395",
+    "nome": "Pai 1",
+    "parentid": null
+  },
+  {
+    "id": "27d6d93c-b380-43fe-99fd-ccb074b3726f",
+    "nome": "Pai 2",
+    "parentid": null
+  },
+  {
+    "id": "f94825d2-34f5-4662-9184-ffa6869a1318",
+    "nome": "Filho Pai 1",
+    "parentid": "f18f6739-0862-4ebb-ad76-1ea6753b3395"
+  },
+  {
+    "id": "27d6d93c-b380-43fe-99fd-ccb074b3727f",
+    "nome": "Filho Pai 1 - 2",
+    "parentid": "f18f6739-0862-4ebb-ad76-1ea6753b3395"
+  },
+  {
+    "id": "a6a421cb-1d4a-4cf7-b975-767a1bc041a2",
+    "nome": "Vegetal",
+    "parentid": null
+  },
+  {
+    "id": "5bc2402a-8025-4e24-b75c-43346c942cf8",
+    "nome": "Fruta",
+    "parentid": "a6a421cb-1d4a-4cf7-b975-767a1bc041a2"
+  },
+  {
+    "id": "c91fc711-03a3-46da-9f40-8b745beecd90",
+    "nome": "Abacaxi",
+    "parentid": "5bc2402a-8025-4e24-b75c-43346c942cf8"
+  },
+  {
+    "id": "ec4ce75f-6eae-41cd-892a-1567dd8f223e",
+    "nome": "Abacate",
+    "parentid": "5bc2402a-8025-4e24-b75c-43346c942cf8"
+  }
+]
