@@ -1,8 +1,6 @@
-using Dapper;
-using Npgsql;
+using Microsoft.EntityFrameworkCore;
 using R3M.Financas.Back.Api.Data;
 using R3M.Financas.Back.Api.Interfaces;
-using System.Data;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -45,15 +43,12 @@ builder.Services.AddScoped<IPeriodoRepository, PeriodoRepository>();
 builder.Services.AddScoped<IInstituicaoRepository, InstituicaoRepository>();
 builder.Services.AddScoped<IMovimentacaoRepository, MovimentacaoRepository>();
 
-
-SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
-
-// Register IDbConnection for dependency injection
-builder.Services.AddTransient<IDbConnection>(sp =>
+builder.Services.AddDbContext<FinancasContext>(opt => 
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    return new NpgsqlConnection(connectionString);
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    opt.UseSnakeCaseNamingConvention();
 });
+
 
 var app = builder.Build();
 

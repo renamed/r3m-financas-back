@@ -19,4 +19,16 @@ public class PeriodoController : ControllerBase
         var periodos = await periodoRepository.ListarAsync(anoBase);
         return Ok(periodos);
     }
+
+    [HttpGet("{id:Guid}")]
+    public async Task<IActionResult> ObterAsync(Guid id)
+    {
+        var periodo = await periodoRepository.ObterAsync(id);
+        if (periodo is null)
+        {
+            return NotFound($"Período com ID {id} não encontrado.");
+        }
+
+        return Ok(periodo);
+    }
 }

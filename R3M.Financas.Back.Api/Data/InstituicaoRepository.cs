@@ -1,4 +1,4 @@
-﻿using Dapper;
+﻿using Microsoft.EntityFrameworkCore;
 using R3M.Financas.Back.Api.Dto;
 using R3M.Financas.Back.Api.Interfaces;
 using System.Data;
@@ -7,65 +7,47 @@ namespace R3M.Financas.Back.Api.Data;
 
 public class InstituicaoRepository : IInstituicaoRepository
 {
-    private readonly IDbConnection dbConnection;
+    private readonly FinancasContext financasContext;
 
-    public InstituicaoRepository(IDbConnection dbConnection)
+    public InstituicaoRepository(FinancasContext financasContext)
     {
-        this.dbConnection = dbConnection;
+        this.financasContext = financasContext;
     }
 
     public async Task<IReadOnlyList<InstituicaoResponse>> ListarAsync()
     {
-        const string sql = @"
-            SELECT 
-                id as InstituicaoId, 
-                nome as Nome, 
-                saldo_atual as Saldo, 
-                instituicao_credito as Credito,
-                limite_credito as LimiteCredito
-            FROM 
-                instituicoes";
-        if (dbConnection.State != ConnectionState.Open)
+        var instituicoes = await financasContext.Instituicoes.ToListAsync();
+        return [.. instituicoes.Select(i => new InstituicaoResponse
         {
-            dbConnection.Open();
-        }
-        return [.. await dbConnection.QueryAsync<InstituicaoResponse>(sql)];
+            InstituicaoId = i.Id,
+            Nome = i.Nome,
+            Saldo = i.SaldoAtual,
+            Credito = i.InstituicaoCredito,
+            LimiteCredito = i.LimiteCredito
+        })];
     }
 
     public async Task<InstituicaoResponse?> ObterAsync(Guid id)
     {
-        const string sql = @"
-            SELECT 
-                id as InstituicaoId, 
-                nome as Nome, 
-                saldo_atual as Saldo, 
-                instituicao_credito as Credito,
-                limite_credito as LimiteCredito
-            FROM 
-                instituicoes
-            WHERE
-                id = @id";
-        if (dbConnection.State != ConnectionState.Open)
+        var instituicao = await financasContext.Instituicoes.FindAsync(id);
+        
+        return instituicao == null ? null : new InstituicaoResponse
         {
-            dbConnection.Open();
-        }
-        return await dbConnection.QueryFirstOrDefaultAsync<InstituicaoResponse>(sql, new { id });
+            InstituicaoId = instituicao.Id,
+            Nome = instituicao.Nome,
+            Saldo = instituicao.SaldoAtual,
+            Credito = instituicao.InstituicaoCredito,
+            LimiteCredito = instituicao.LimiteCredito
+        };
     }
 
     public async Task AtualizarSaldoAsync(Guid id, decimal novoSaldo)
     {
-        const string sql = @"
-            UPDATE
-                instituicoes
-            SET
-                saldo_atual = @novoSaldo
-            WHERE
-                id = @id";
+        var instituicao = await financasContext.Instituicoes.FindAsync(id) 
+            ?? throw new KeyNotFoundException($"Instituição com ID {id} não encontrada.");
 
-        if (dbConnection.State != ConnectionState.Open)
-        {
-            dbConnection.Open();
-        }
-        await dbConnection.ExecuteAsync(sql, new { id, novoSaldo });
+        instituicao.SaldoAtual = novoSaldo;
+        financasContext.Instituicoes.Update(instituicao);
+        await financasContext.SaveChangesAsync();
     }
 }

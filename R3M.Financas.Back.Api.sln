@@ -8,6 +8,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{02EA681E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "R3M.Financas.Back.Api.UnitTests", "R3M.Financas.Back.Api.UnitTests\R3M.Financas.Back.Api.UnitTests.csproj", "{8B7073A9-5EE5-40C7-B09F-0BA3F98CE67C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "R3M.Financas.Back.Api.IntegrationTests", "R3M.Financas.Back.Api.IntegrationTests\R3M.Financas.Back.Api.IntegrationTests.csproj", "{042AAE21-282F-4B98-AAE6-D1A40A269C2D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -22,12 +24,17 @@ Global
 		{8B7073A9-5EE5-40C7-B09F-0BA3F98CE67C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B7073A9-5EE5-40C7-B09F-0BA3F98CE67C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B7073A9-5EE5-40C7-B09F-0BA3F98CE67C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{042AAE21-282F-4B98-AAE6-D1A40A269C2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{042AAE21-282F-4B98-AAE6-D1A40A269C2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{042AAE21-282F-4B98-AAE6-D1A40A269C2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{042AAE21-282F-4B98-AAE6-D1A40A269C2D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{8B7073A9-5EE5-40C7-B09F-0BA3F98CE67C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{042AAE21-282F-4B98-AAE6-D1A40A269C2D} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9951671B-118C-4205-BB0D-4AA7E7331C85}
