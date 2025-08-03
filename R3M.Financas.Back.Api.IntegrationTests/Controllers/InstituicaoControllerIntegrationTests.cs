@@ -22,7 +22,7 @@ public class InstituicaoControllerIntegrationTests : IntegrationTestsBase
         
         var body = await response.Content.ReadFromJsonAsync<IEnumerable<InstituicaoResponse>>();
         Assert.NotNull(body);
-        Assert.Equal(3, body.Count());
+        Assert.Equal(3, body.Count(x => x.Nome != "Banco Teste"));
     }
 
     [Fact]
@@ -45,5 +45,24 @@ public class InstituicaoControllerIntegrationTests : IntegrationTestsBase
         var response = await _httpClient.GetAsync(rota);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CriarAsync_DeveRetornar201_QuandoDadosValidos()
+    {
+        var request = new InstituicaoRequest
+        {
+            Nome = "Banco Teste",
+            SaldoInicial = 1000.00m,
+            DataSaldoInicial = DateOnly.FromDateTime(DateTime.UtcNow),
+            InstituicaoCredito = true,
+            LimiteCredito = 5000.00m
+        };
+        var response = await _httpClient.PostAsJsonAsync(ROTA_INSTITUICOES, request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<InstituicaoResponse>();
+        Assert.NotNull(body);
+        Assert.NotEqual(Guid.Empty, body.InstituicaoId);
     }
 }
