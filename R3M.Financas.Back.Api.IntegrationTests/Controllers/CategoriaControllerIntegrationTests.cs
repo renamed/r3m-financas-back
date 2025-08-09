@@ -1,5 +1,6 @@
 ﻿using R3M.Financas.Back.Api.Dto;
 using R3M.Financas.Back.Api.IntegrationTests.Fixtures;
+using System.Net;
 using System.Net.Http.Json;
 
 namespace R3M.Financas.Back.Api.IntegrationTests.Controllers;
@@ -84,5 +85,35 @@ public class CategoriaControllerIntegrationTests : IntegrationTestsBase
 
         Assert.Contains(body, c => c.Nome == "Abacate");
         Assert.Contains(body, c => c.Nome == "Abacaxi");
+    }
+
+    [Fact]
+    public async Task CreateAsync_DeveRetornar201_QuandoCriarCategoriaValida()
+    {
+        // Arrange
+        var request = new CategoriaRequest { Nome = "Nova Categoria", ParentId = null };
+
+        // Act
+        var response = await _httpClient.PostAsJsonAsync(ROTA_CATEGORIAS, request);
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ShouldReturn204_WhenDeletingValidCategory()
+    {
+        // Arrange
+        using var context = GetContext();
+        var categoriaId = context.Categorias.First().Id;
+        var url = $"{ROTA_CATEGORIAS}/{categoriaId}";
+
+        // Act
+        var response = await _httpClient.DeleteAsync(url);
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 }
