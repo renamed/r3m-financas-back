@@ -42,6 +42,7 @@ builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 builder.Services.AddScoped<IPeriodoRepository, PeriodoRepository>();
 builder.Services.AddScoped<IInstituicaoRepository, InstituicaoRepository>();
 builder.Services.AddScoped<IMovimentacaoRepository, MovimentacaoRepository>();
+builder.Services.AddScoped<ITipoCategoriaRepository, TipoCategoriaRepository>();
 
 builder.Services.AddDbContext<FinancasContext>(opt => 
 {

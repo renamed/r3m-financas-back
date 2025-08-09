@@ -6,7 +6,7 @@ namespace R3M.Financas.Back.Api.Data;
 
 public class FinancasContext : DbContext
 {
-    public DbSet<TipoCategoria> TiposCategoria { get; set; }
+    public DbSet<TipoCategoria> TipoCategoria { get; set; }
     public DbSet<Periodo> Periodos { get; set; }
     public DbSet<Instituicao> Instituicoes { get; set; }
     public DbSet<Categoria> Categorias { get; set; }
@@ -136,6 +136,8 @@ public class FinancasContext : DbContext
         modelBuilder.Entity<TipoCategoria>(e =>
         {
             ConfigRegistro(e);
+
+            e.ToTable("tipo_categoria");
 
             e.Property(tc => tc.Nome)
                 .IsRequired()

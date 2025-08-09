@@ -17,10 +17,10 @@ public class IntegrationTestsBase
         _httpClient = factory.CreateClient();
         _factory = factory;
                 
-        var Context = GetContext();
+        using var context = GetContext();
 
-        EnsureDatabaseCreated(Context);
-        PopulateDb();
+        EnsureDatabaseCreated(context);
+        PopulateDb(context);
     }
 
     protected FinancasContext GetContext()
@@ -34,11 +34,11 @@ public class IntegrationTestsBase
         context.Database.EnsureCreated();
     }
 
-    private void PopulateDb()
+    private void PopulateDb(FinancasContext context)
     {
         if (populated) return;
-
-        var context = GetContext();
+                
+        context.TipoCategoria.AddRange(LerDados<TipoCategoria>("tipos_categorias.json"));
         context.Categorias.AddRange(LerDados<Categoria>("categorias.json"));
         context.Instituicoes.AddRange(LerDados<Instituicao>("instituicoes.json"));
         context.Periodos.AddRange(LerDados<Periodo>("periodos.json"));

@@ -109,6 +109,13 @@ public class MovimentacaoRepository : IMovimentacaoRepository
         };
     }
 
+    public async Task<int> ContarPorCategoriaAsync(IList<Guid> categoriaId)
+    {
+
+        return await financasContext.Movimentacoes
+            .CountAsync(c => categoriaId.Contains(c.CategoriaId));
+    }
+
     public async Task DeletarAsync(Guid id)
     {
         var movimentacao = await financasContext.Movimentacoes.FindAsync(id);
