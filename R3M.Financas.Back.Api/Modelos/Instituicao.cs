@@ -8,4 +8,5 @@ public class Instituicao : Registro
     public DateOnly DataSaldoInicial { get; set; }
     public bool InstituicaoCredito { get; set; }
     public decimal? LimiteCredito { get; set; }
+    public int? DiaFechamentoFatura { get; set; }
 }

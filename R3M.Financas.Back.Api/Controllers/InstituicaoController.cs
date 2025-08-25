@@ -43,8 +43,18 @@ public class InstituicaoController : ControllerBase
         {
             if (request.LimiteCredito == 0) return BadRequest("O limite de crédito deve ser informado se a instituição for de crédito.");
             if (request.LimiteCredito < 0) return BadRequest("O limite de crédito não pode ser negativo.");
+            if (!request.DiaFechamentoFatura.HasValue) return BadRequest("O dia de fechamento da fatura é obrigatório para uma instituição de crédito.");
+            if (request.DiaFechamentoFatura < 1 || request.DiaFechamentoFatura > 31)
+            {
+                return BadRequest("O dia de fechamento da fatura deve estar entre 1 e 31.");
+            }
+
+        } 
+        else if (request.LimiteCredito.HasValue && request.LimiteCredito != 0)
+        {
+            return BadRequest("O limite de crédito não deve ser informado se a instituição não for de crédito.");
         }
-        if (!request.InstituicaoCredito && request.LimiteCredito.HasValue && request.LimiteCredito != 0) return BadRequest("O limite de crédito não deve ser informado se a instituição não for de crédito.");
+
 
         if (await instituicaoRepository.ExistePorNomeAsync(request.Nome))
         {

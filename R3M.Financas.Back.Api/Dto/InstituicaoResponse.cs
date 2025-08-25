@@ -18,4 +18,19 @@ public class InstituicaoResponse
 
     [JsonPropertyName("limite_credito")]
     public decimal? LimiteCredito { get; set; }
+
+    [JsonPropertyName("dia_fechamento_fatura")]
+    public int? DiaFechamentoFatura { get; set; }
+
+    [JsonPropertyName("faturas")]
+    public List<FaturaResponse> Faturas { get; set; }
+}
+
+public class FaturaResponse
+{
+    [JsonPropertyName("periodo")]
+    public PeriodoResponse Periodo { get; set; }
+
+    [JsonPropertyName("valor")]
+    public decimal? Valor { get; set; }
 }

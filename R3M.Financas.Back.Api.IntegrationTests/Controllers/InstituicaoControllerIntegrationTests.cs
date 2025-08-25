@@ -56,7 +56,8 @@ public class InstituicaoControllerIntegrationTests : IntegrationTestsBase
             SaldoInicial = 1000.00m,
             DataSaldoInicial = DateOnly.FromDateTime(DateTime.UtcNow),
             InstituicaoCredito = true,
-            LimiteCredito = 5000.00m
+            LimiteCredito = 5000.00m,
+            DiaFechamentoFatura = 15
         };
         var response = await _httpClient.PostAsJsonAsync(ROTA_INSTITUICOES, request);
 

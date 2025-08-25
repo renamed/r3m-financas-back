@@ -189,6 +189,71 @@ public class InstituicaoControllerUnitTests
     }
 
     [Fact]
+    public async Task CriarAsync_ShouldReturnBadRequest_WhenInstituicaoCreditoSemFechamentoFatura()
+    {
+        // Arrange
+        var request = new InstituicaoRequest
+        {
+            Nome = "Banco",
+            DataSaldoInicial = DateOnly.FromDateTime(DateTime.Today),
+            InstituicaoCredito = true,
+            LimiteCredito = 100,
+            SaldoInicial = 500
+        };
+        var expected = new InstituicaoResponse
+        {
+            InstituicaoId = Guid.NewGuid(),
+            Nome = request.Nome,
+            Saldo = request.SaldoInicial,
+            Credito = request.InstituicaoCredito,
+            LimiteCredito = request.LimiteCredito,
+            DiaFechamentoFatura = request.DiaFechamentoFatura
+        };
+        _mockRepo.Setup(r => r.ExistePorNomeAsync(request.Nome)).ReturnsAsync(false);
+        _mockRepo.Setup(r => r.CriarAsync(request)).ReturnsAsync(expected);
+
+        // Act
+        var result = await _controller.CriarAsync(request);
+        // Assert
+        var response = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("O dia de fechamento da fatura é obrigatório para uma instituição de crédito.", response.Value);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(32)]
+    public async Task CriarAsync_ShouldReturnBadRequest_WhenDiaFechamentoEntre1E31(int dia)
+    {
+        // Arrange
+        var request = new InstituicaoRequest
+        {
+            Nome = "Banco",
+            DataSaldoInicial = DateOnly.FromDateTime(DateTime.Today),
+            InstituicaoCredito = true,
+            LimiteCredito = 100,
+            SaldoInicial = 500,
+            DiaFechamentoFatura = dia
+        };
+        var expected = new InstituicaoResponse
+        {
+            InstituicaoId = Guid.NewGuid(),
+            Nome = request.Nome,
+            Saldo = request.SaldoInicial,
+            Credito = request.InstituicaoCredito,
+            LimiteCredito = request.LimiteCredito,
+            DiaFechamentoFatura = request.DiaFechamentoFatura
+        };
+        _mockRepo.Setup(r => r.ExistePorNomeAsync(request.Nome)).ReturnsAsync(false);
+        _mockRepo.Setup(r => r.CriarAsync(request)).ReturnsAsync(expected);
+
+        // Act
+        var result = await _controller.CriarAsync(request);
+        // Assert
+        var response = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("O dia de fechamento da fatura deve estar entre 1 e 31.", response.Value);
+    }
+
+    [Fact]
     public async Task CriarAsync_ShouldReturnCreated_WhenValid()
     {
         // Arrange
@@ -197,14 +262,16 @@ public class InstituicaoControllerUnitTests
             DataSaldoInicial = DateOnly.FromDateTime(DateTime.Today),
             InstituicaoCredito = true,
             LimiteCredito = 100,
-            SaldoInicial = 500
+            SaldoInicial = 500,
+            DiaFechamentoFatura = 4
         };
         var expected = new InstituicaoResponse {
             InstituicaoId = Guid.NewGuid(),
             Nome = request.Nome,
             Saldo = request.SaldoInicial,
             Credito = request.InstituicaoCredito,
-            LimiteCredito = request.LimiteCredito
+            LimiteCredito = request.LimiteCredito,
+            DiaFechamentoFatura = request.DiaFechamentoFatura
         };
         _mockRepo.Setup(r => r.ExistePorNomeAsync(request.Nome)).ReturnsAsync(false);
         _mockRepo.Setup(r => r.CriarAsync(request)).ReturnsAsync(expected);

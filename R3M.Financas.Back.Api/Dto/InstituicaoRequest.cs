@@ -18,4 +18,7 @@ public class InstituicaoRequest
     
     [JsonPropertyName("limite_credito")]
     public decimal? LimiteCredito { get; set; }
+    
+    [JsonPropertyName("dia_fechamento_fatura")]
+    public int? DiaFechamentoFatura { get; set; }
 }

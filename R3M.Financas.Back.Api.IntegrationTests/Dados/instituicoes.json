@@ -6,6 +6,7 @@
     "SaldoAtual": -4500.00,
     "DataSaldoInicial": "2023-01-01",
     "InstituicaoCredito": true,
+    "DiaFechamentoFatura":  4,
     "LimiteCredito": -3000
   },
   {
