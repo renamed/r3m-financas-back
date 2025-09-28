@@ -22,6 +22,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\R3M.Financas.Back.Api\R3M.Financas.Back.Api.csproj" />
+    <ProjectReference Include="..\R3M.Financas.Back.Domain\R3M.Financas.Back.Domain.csproj" />
+    <ProjectReference Include="..\R3M.Financas.Back.Repository\R3M.Financas.Back.Repository.csproj" />
   </ItemGroup>
 
   <ItemGroup>

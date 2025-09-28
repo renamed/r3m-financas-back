@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\R3M.Financas.Back.Domain\R3M.Financas.Back.Domain.csproj" />
+    <ProjectReference Include="..\R3M.Financas.Back.Repository\R3M.Financas.Back.Repository.csproj" />
+  </ItemGroup>
+
+</Project>

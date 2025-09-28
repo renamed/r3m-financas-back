@@ -2,8 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using R3M.Financas.Back.Api.Controllers;
-using R3M.Financas.Back.Api.Dto;
-using R3M.Financas.Back.Api.Interfaces;
+using R3M.Financas.Back.Application.Interfaces;
+using R3M.Financas.Back.Domain.Dtos;
+using R3M.Financas.Back.Domain.Models;
+using R3M.Financas.Back.Repository.Interfaces;
 
 namespace R3M.Financas.Back.Api.UnitTests.Controllers;
 
@@ -12,10 +14,16 @@ public class InstituicaoControllerUnitTests
     private readonly Mock<IInstituicaoRepository> _mockRepo;
     private readonly InstituicaoController _controller;
 
+    private readonly Mock<IConverter<InstituicaoResponse, Instituicao>> _converterResponse;
+    private readonly Mock<IConverter<InstituicaoRequest, Instituicao>> _converterRequest;
+
     public InstituicaoControllerUnitTests()
     {
         _mockRepo = new Mock<IInstituicaoRepository>();
-        _controller = new InstituicaoController(_mockRepo.Object);
+        _converterResponse = new Mock<IConverter<InstituicaoResponse, Instituicao>>();
+        _converterRequest = new Mock<IConverter<InstituicaoRequest, Instituicao>>();
+
+        _controller = new InstituicaoController(_mockRepo.Object, _converterResponse.Object, _converterRequest.Object);
         _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
     }
 
@@ -23,33 +31,63 @@ public class InstituicaoControllerUnitTests
     public async Task ListarAsync_ShouldReturnInstituicoes()
     {
         // Arrange
-        var expected = new List<InstituicaoResponse>
+        var expected = new List<Instituicao>
             {
-                new InstituicaoResponse
+                new Instituicao
                 {
-                    InstituicaoId = Guid.NewGuid(),
+                    Id = Guid.NewGuid(),
                     Nome = "Banco A",
-                    Saldo = 1000.50m,
-                    Credito = true
+                    SaldoInicial = 1000.50m,
+                    InstituicaoCredito = true
                 },
-                new InstituicaoResponse
+                new Instituicao
                 {
-                    InstituicaoId = Guid.NewGuid(),
+                    Id = Guid.NewGuid(),
                     Nome = "Banco B",
-                    Saldo = 500.00m,
-                    Credito = false
+                    SaldoInicial = 500.00m,
+                    InstituicaoCredito = false
                 }
             };
 
         _mockRepo.Setup(repo => repo.ListarAsync())
                  .ReturnsAsync(expected);
 
+        _converterResponse.Setup(c => c.BulkConvert(expected)).Returns(new List<InstituicaoResponse>
+            {
+            new InstituicaoResponse
+            {
+                InstituicaoId = expected[0].Id,
+                Nome = expected[0].Nome,
+                Saldo = expected[0].SaldoInicial,
+                Credito = expected[0].InstituicaoCredito,
+                LimiteCredito = expected[0].LimiteCredito
+            },
+            new InstituicaoResponse
+            {
+                InstituicaoId = expected[1].Id,
+                Nome = expected[1].Nome,
+                Saldo = expected[1].SaldoInicial,
+                Credito = expected[1].InstituicaoCredito,
+                LimiteCredito = expected[1].LimiteCredito
+            }
+        });
+
         // Act
         var result = await _controller.ListarAsync();
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(expected, okResult.Value);
+        var response = Assert.IsType<List<InstituicaoResponse>>(okResult.Value);
+
+        Assert.Equal(expected.Count, response.Count);
+        for (int i = 0; i < expected.Count; i++)
+        {
+            Assert.Equal(expected[i].Id, response[i].InstituicaoId);
+            Assert.Equal(expected[i].Nome, response[i].Nome);
+            Assert.Equal(expected[i].SaldoInicial, response[i].Saldo);
+            Assert.Equal(expected[i].InstituicaoCredito, response[i].Credito);
+            Assert.Equal(expected[i].LimiteCredito, response[i].LimiteCredito);
+        }
     }
 
     [Fact]
@@ -57,15 +95,30 @@ public class InstituicaoControllerUnitTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        var expected = new InstituicaoResponse { InstituicaoId = id, Nome = "Banco Teste", Saldo = 100, Credito = true };
+        var expected = new Instituicao { Id = id, Nome = "Banco Teste", SaldoInicial = 100, InstituicaoCredito = true };
         _mockRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync(expected);
+
+       _converterResponse.Setup(c => c.Convert(expected)).Returns(new InstituicaoResponse
+           {
+            InstituicaoId = expected.Id,
+            Nome = expected.Nome,
+            Saldo = expected.SaldoInicial,
+            Credito = expected.InstituicaoCredito,
+            LimiteCredito = expected.LimiteCredito
+        });
 
         // Act
         var result = await _controller.ObterAsync(id);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(expected, okResult.Value);
+        var response = Assert.IsType<InstituicaoResponse>(okResult.Value);
+
+        Assert.Equal(expected.Id, response.InstituicaoId);
+        Assert.Equal(expected.Nome, response.Nome);
+        Assert.Equal(expected.SaldoInicial, response.Saldo);
+        Assert.Equal(expected.InstituicaoCredito, response.Credito);
+        Assert.Equal(expected.LimiteCredito, response.LimiteCredito);
     }
 
     [Fact]
@@ -73,7 +126,7 @@ public class InstituicaoControllerUnitTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        _mockRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync((InstituicaoResponse?)null);
+        _mockRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync((Instituicao?)null);
 
         // Act
         var result = await _controller.ObterAsync(id);
@@ -128,7 +181,7 @@ public class InstituicaoControllerUnitTests
     }
 
     [Fact]
-    public async Task CriarAsync_ShouldReturnBadRequest_WhenLimiteCreditoZeroForCredito()
+    public async Task CriarAsync_ShouldReturnBadRequest_WhenLimiteCreditoZeroForInstituicaoCredito()
     {
         // Arrange
         var request = new InstituicaoRequest { Nome = "Banco", DataSaldoInicial = DateOnly.FromDateTime(DateTime.Today), InstituicaoCredito = true, LimiteCredito = 0 };
@@ -142,7 +195,7 @@ public class InstituicaoControllerUnitTests
     }
 
     [Fact]
-    public async Task CriarAsync_ShouldReturnBadRequest_WhenLimiteCreditoNegativeForCredito()
+    public async Task CriarAsync_ShouldReturnBadRequest_WhenLimiteCreditoNegativeForInstituicaoCredito()
     {
         // Arrange
         var request = new InstituicaoRequest { Nome = "Banco", DataSaldoInicial = DateOnly.FromDateTime(DateTime.Today), InstituicaoCredito = true, LimiteCredito = -10 };
@@ -156,7 +209,7 @@ public class InstituicaoControllerUnitTests
     }
 
     [Fact]
-    public async Task CriarAsync_ShouldReturnBadRequest_WhenLimiteCreditoProvidedForNonCredito()
+    public async Task CriarAsync_ShouldReturnBadRequest_WhenLimiteCreditoProvidedForNonInstituicaoCredito()
     {
         // Arrange
         var request = new InstituicaoRequest { Nome = "Banco", DataSaldoInicial = DateOnly.FromDateTime(DateTime.Today), InstituicaoCredito = false, LimiteCredito = 10 };
@@ -199,25 +252,49 @@ public class InstituicaoControllerUnitTests
             LimiteCredito = 100,
             SaldoInicial = 500
         };
-        var expected = new InstituicaoResponse {
-            InstituicaoId = Guid.NewGuid(),
+        var expected = new Instituicao {
+            Id = Guid.NewGuid(),
             Nome = request.Nome,
-            Saldo = request.SaldoInicial,
-            Credito = request.InstituicaoCredito,
+            SaldoInicial = request.SaldoInicial,
+            InstituicaoCredito = request.InstituicaoCredito,
             LimiteCredito = request.LimiteCredito
         };
         _mockRepo.Setup(r => r.ExistePorNomeAsync(request.Nome)).ReturnsAsync(false);
-        _mockRepo.Setup(r => r.CriarAsync(request)).ReturnsAsync(expected);
+        _mockRepo.Setup(r => r.CriarAsync(It.Is<Instituicao>(i => i.Nome == request.Nome))).ReturnsAsync(expected);
+
+        _converterRequest.Setup(c => c.Convert(request)).Returns(new Instituicao
+        {
+            Nome = request.Nome,
+            SaldoInicial = request.SaldoInicial,
+            InstituicaoCredito = request.InstituicaoCredito,
+            LimiteCredito = request.LimiteCredito
+        });
+
+        _converterResponse.Setup(c => c.Convert(It.Is<Instituicao>(i => i.Nome == request.Nome))).Returns(new InstituicaoResponse
+        {
+            InstituicaoId = expected.Id,
+            Nome = expected.Nome,
+            Saldo = expected.SaldoInicial,
+            Credito = expected.InstituicaoCredito,
+            LimiteCredito = expected.LimiteCredito
+        });
 
         // Act
         var result = await _controller.CriarAsync(request);
         // Assert
         var createdResult = Assert.IsType<CreatedResult>(result);
-        Assert.Equal(expected, createdResult.Value);
+        var response = Assert.IsType<InstituicaoResponse>(createdResult.Value);
+
+        Assert.Equal(expected.Id, response.InstituicaoId);
+        Assert.Equal(expected.Nome, response.Nome);
+        Assert.Equal(expected.SaldoInicial, response.Saldo);
+        Assert.Equal(expected.InstituicaoCredito, response.Credito);
+        Assert.Equal(expected.LimiteCredito, response.LimiteCredito);
+
     }
 
     [Fact]
-    public async Task CriarAsync_ShouldReturnOk_WhenLimiteCreditoIsNullAndNotCredito()
+    public async Task CriarAsync_ShouldReturnOk_WhenLimiteCreditoIsNullAndNotInstituicaoCredito()
     {
         // Arrange
         var request = new InstituicaoRequest {
@@ -227,20 +304,44 @@ public class InstituicaoControllerUnitTests
             LimiteCredito = null,
             SaldoInicial = 100
         };
-        var expected = new InstituicaoResponse {
-            InstituicaoId = Guid.NewGuid(),
+        var expected = new Instituicao {
+            Id = Guid.NewGuid(),
             Nome = request.Nome,
-            Saldo = request.SaldoInicial,
-            Credito = request.InstituicaoCredito,
+            SaldoInicial = request.SaldoInicial,
+            InstituicaoCredito = request.InstituicaoCredito,
             LimiteCredito = request.LimiteCredito
         };
         _mockRepo.Setup(r => r.ExistePorNomeAsync(request.Nome)).ReturnsAsync(false);
-        _mockRepo.Setup(r => r.CriarAsync(request)).ReturnsAsync(expected);
+        _mockRepo.Setup(r => r.CriarAsync(It.Is<Instituicao>(s => s.Nome == request.Nome))).ReturnsAsync(expected);
+
+        _converterRequest.Setup(c => c.Convert(request)).Returns(new Instituicao
+        {
+            Nome = request.Nome,
+            SaldoInicial = request.SaldoInicial,
+            InstituicaoCredito = request.InstituicaoCredito,
+            LimiteCredito = request.LimiteCredito
+        });
+
+        _converterResponse.Setup(c => c.Convert(It.Is<Instituicao>(s => s.Nome == request.Nome))).Returns(new InstituicaoResponse
+        {
+            InstituicaoId = expected.Id,
+            Nome = expected.Nome,
+            Saldo = expected.SaldoInicial,
+            Credito = expected.InstituicaoCredito,
+            LimiteCredito = expected.LimiteCredito
+        });
+
         // Act
         var result = await _controller.CriarAsync(request);
         // Assert
         var createdResult = Assert.IsType<CreatedResult>(result);
-        Assert.Equal(expected, createdResult.Value);
+        var response = Assert.IsType<InstituicaoResponse>(createdResult.Value);
+
+        Assert.Equal(expected.Id, response.InstituicaoId);
+        Assert.Equal(expected.Nome, response.Nome);
+        Assert.Equal(expected.SaldoInicial, response.Saldo);
+        Assert.Equal(expected.InstituicaoCredito, response.Credito);
+        Assert.Equal(expected.LimiteCredito, response.LimiteCredito);
     }
 }
 

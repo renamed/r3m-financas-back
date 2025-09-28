@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using R3M.Financas.Back.Api.Dto;
 using R3M.Financas.Back.Api.IntegrationTests.Fixtures;
+using R3M.Financas.Back.Domain.Dtos;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.Mime;

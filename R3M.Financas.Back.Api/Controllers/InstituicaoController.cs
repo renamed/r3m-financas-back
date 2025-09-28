@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using R3M.Financas.Back.Api.Dto;
-using R3M.Financas.Back.Api.Interfaces;
+using R3M.Financas.Back.Application.Interfaces;
+using R3M.Financas.Back.Domain.Dtos;
+using R3M.Financas.Back.Domain.Models;
+using R3M.Financas.Back.Repository.Interfaces;
 
 namespace R3M.Financas.Back.Api.Controllers;
 
@@ -9,16 +11,21 @@ namespace R3M.Financas.Back.Api.Controllers;
 public class InstituicaoController : ControllerBase
 {
     private readonly IInstituicaoRepository instituicaoRepository;
-    public InstituicaoController(IInstituicaoRepository instituicaoRepository)
+    private readonly IConverter<InstituicaoResponse, Instituicao> converterResponse;
+    private readonly IConverter<InstituicaoRequest, Instituicao> converterRequest;
+
+    public InstituicaoController(IInstituicaoRepository instituicaoRepository, IConverter<InstituicaoResponse, Instituicao> converterResponse, IConverter<InstituicaoRequest, Instituicao> converterRequest)
     {
         this.instituicaoRepository = instituicaoRepository;
+        this.converterResponse = converterResponse;
+        this.converterRequest = converterRequest;
     }
 
     [HttpGet]
     public async Task<IActionResult> ListarAsync()
     {
         var instituicoes = await instituicaoRepository.ListarAsync();
-        return Ok(instituicoes);
+        return Ok(converterResponse.BulkConvert(instituicoes));
     }
 
     [HttpGet("{id}")]
@@ -30,7 +37,7 @@ public class InstituicaoController : ControllerBase
             return NotFound($"Instituição com ID {id} não encontrada.");
         }
 
-        return Ok(instituicao);
+        return Ok(converterResponse.Convert(instituicao));
     }
 
     [HttpPost]
@@ -51,7 +58,9 @@ public class InstituicaoController : ControllerBase
             return BadRequest($"Já existe uma instituição com o nome '{request.Nome}'.");
         }
 
-        var instituicao = await instituicaoRepository.CriarAsync(request);
-        return Created(Request.Path, instituicao);
+        var novaInstituicao = converterRequest.Convert(request);
+
+        var instituicao = await instituicaoRepository.CriarAsync(novaInstituicao);
+        return Created(Request.Path, converterResponse.Convert(instituicao));
     }
 }

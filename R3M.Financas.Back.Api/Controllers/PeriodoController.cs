@@ -1,5 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using R3M.Financas.Back.Api.Interfaces;
+using Npgsql.Internal;
+using R3M.Financas.Back.Application.Interfaces;
+using R3M.Financas.Back.Domain.Dtos;
+using R3M.Financas.Back.Domain.Models;
+using R3M.Financas.Back.Repository.Interfaces;
 
 namespace R3M.Financas.Back.Api.Controllers;
 
@@ -8,9 +12,11 @@ namespace R3M.Financas.Back.Api.Controllers;
 public class PeriodoController : ControllerBase
 {
     private readonly IPeriodoRepository periodoRepository;
-    public PeriodoController(IPeriodoRepository periodoRepository)
+    private readonly IConverter<PeriodoResponse, Periodo> converter;
+    public PeriodoController(IPeriodoRepository periodoRepository, IConverter<PeriodoResponse, Periodo> converter)
     {
         this.periodoRepository = periodoRepository;
+        this.converter = converter;
     }
 
     [HttpGet("{anoBase:int}")]
@@ -29,6 +35,6 @@ public class PeriodoController : ControllerBase
             return NotFound($"Período com ID {id} não encontrado.");
         }
 
-        return Ok(periodo);
+        return Ok(converter.Convert(periodo));
     }
 }

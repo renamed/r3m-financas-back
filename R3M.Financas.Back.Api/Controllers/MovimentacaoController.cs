@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using R3M.Financas.Back.Api.Dto;
-using R3M.Financas.Back.Api.Interfaces;
+using R3M.Financas.Back.Application.Interfaces;
+using R3M.Financas.Back.Domain.Dtos;
+using R3M.Financas.Back.Domain.Models;
+using R3M.Financas.Back.Repository.Interfaces;
 
 namespace R3M.Financas.Back.Api.Controllers;
 
@@ -13,19 +15,24 @@ public class MovimentacaoController : ControllerBase
     private readonly IInstituicaoRepository instituicaoRepository;
     private readonly ICategoriaRepository categoriaRepository;
 
-    public MovimentacaoController(IMovimentacaoRepository movimentacaoRepository, IPeriodoRepository periodoRepository, IInstituicaoRepository instituicaoRepository, ICategoriaRepository categoriaRepository)
+    private readonly IConverter<MovimentacaoRequest, Movimentacao> converterRequest;
+    private readonly IConverter<MovimentacaoResponse, Movimentacao> converterResponse;
+
+    public MovimentacaoController(IMovimentacaoRepository movimentacaoRepository, IPeriodoRepository periodoRepository, IInstituicaoRepository instituicaoRepository, ICategoriaRepository categoriaRepository, IConverter<MovimentacaoRequest, Movimentacao> converterRequest, IConverter<MovimentacaoResponse, Movimentacao> converterResponse)
     {
         this.movimentacaoRepository = movimentacaoRepository;
         this.periodoRepository = periodoRepository;
         this.instituicaoRepository = instituicaoRepository;
         this.categoriaRepository = categoriaRepository;
+        this.converterRequest = converterRequest;
+        this.converterResponse = converterResponse;
     }
 
     [HttpGet("{instituicaoId:guid}/{periodoId:guid}")]
     public async Task<IActionResult> ListarAsync(Guid instituicaoId, Guid periodoId)
     {
         var movimentacoes = await movimentacaoRepository.ListarAsync(instituicaoId, periodoId);
-        return Ok(movimentacoes);
+        return Ok(converterResponse.BulkConvert(movimentacoes));
     }
 
     [HttpPost]
@@ -40,11 +47,13 @@ public class MovimentacaoController : ControllerBase
         var categoria = await categoriaRepository.ObterAsync(movimentacaoRequest.CategoriaId);
         if (categoria is null) return NotFound(nameof(categoria));
 
-        var novoSaldo = instituicao.Saldo;
-        novoSaldo += instituicao.Credito ? -movimentacaoRequest.Valor : movimentacaoRequest.Valor;
+        var novoSaldo = instituicao.SaldoAtual;
+        novoSaldo += instituicao.InstituicaoCredito ? -movimentacaoRequest.Valor : movimentacaoRequest.Valor;
 
-        await movimentacaoRepository.AdicionarAsync(movimentacaoRequest);
-        await instituicaoRepository.AtualizarSaldoAsync(instituicao.InstituicaoId, novoSaldo);
+        var movimentacao = converterRequest.Convert(movimentacaoRequest);
+
+        await movimentacaoRepository.AdicionarAsync(movimentacao);
+        await instituicaoRepository.AtualizarSaldoAsync(instituicao.Id, novoSaldo);
 
         return Created();
     }
@@ -55,14 +64,14 @@ public class MovimentacaoController : ControllerBase
         var movimentacao = await movimentacaoRepository.ObterAsync(id);
         if (movimentacao is null) return NotFound(nameof(movimentacao));
 
-        var instituicao = await instituicaoRepository.ObterAsync(movimentacao.Instituicao.InstituicaoId);
+        var instituicao = await instituicaoRepository.ObterAsync(movimentacao.InstituicaoId);
         if (instituicao is null) return NotFound(nameof(instituicao));
 
-        var novoSaldo = instituicao.Saldo;
-        novoSaldo += instituicao.Credito ? movimentacao.Valor : -movimentacao.Valor;
+        var novoSaldo = instituicao.SaldoAtual;
+        novoSaldo += instituicao.InstituicaoCredito ? movimentacao.Valor : -movimentacao.Valor;
 
         await movimentacaoRepository.DeletarAsync(id);
-        await instituicaoRepository.AtualizarSaldoAsync(instituicao.InstituicaoId, novoSaldo);
+        await instituicaoRepository.AtualizarSaldoAsync(instituicao.Id, novoSaldo);
 
         return Ok();
     }

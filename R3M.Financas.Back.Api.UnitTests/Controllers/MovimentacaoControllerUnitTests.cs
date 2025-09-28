@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Moq;
 using R3M.Financas.Back.Api.Controllers;
-using R3M.Financas.Back.Api.Dto;
-using R3M.Financas.Back.Api.Interfaces;
+using R3M.Financas.Back.Application.Interfaces;
+using R3M.Financas.Back.Domain.Dtos;
+using R3M.Financas.Back.Domain.Models;
+using R3M.Financas.Back.Repository.Interfaces;
 
 namespace R3M.Financas.Back.Api.UnitTests.Controllers;
 
@@ -12,6 +14,8 @@ public class MovimentacaoControllerUnitTests
     private readonly Mock<IPeriodoRepository> _mockPeriodoRepo;
     private readonly Mock<IInstituicaoRepository> _mockInstRepo;
     private readonly Mock<ICategoriaRepository> _mockCatRepo;
+    private readonly Mock<IConverter<MovimentacaoRequest, Movimentacao>> _mockConverterRequest;
+    private readonly Mock<IConverter<MovimentacaoResponse, Movimentacao>> _mockConverterResponse;
     private readonly MovimentacaoController _controller;
 
     public MovimentacaoControllerUnitTests()
@@ -20,12 +24,16 @@ public class MovimentacaoControllerUnitTests
         _mockPeriodoRepo = new Mock<IPeriodoRepository>();
         _mockInstRepo = new Mock<IInstituicaoRepository>();
         _mockCatRepo = new Mock<ICategoriaRepository>();
+        _mockConverterRequest = new Mock<IConverter<MovimentacaoRequest, Movimentacao>>();
+        _mockConverterResponse = new Mock<IConverter<MovimentacaoResponse, Movimentacao>>();
 
         _controller = new MovimentacaoController(
             _mockMovRepo.Object,
             _mockPeriodoRepo.Object,
             _mockInstRepo.Object,
-            _mockCatRepo.Object
+            _mockCatRepo.Object,
+            _mockConverterRequest.Object,
+            _mockConverterResponse.Object
         );
     }
 
@@ -35,28 +43,52 @@ public class MovimentacaoControllerUnitTests
         // Arrange
         var instituicaoId = Guid.NewGuid();
         var periodoId = Guid.NewGuid();
-        var expected = new List<MovimentacaoResponse>
+        var expected = new List<Movimentacao>
             {
-                new MovimentacaoResponse
+                new Movimentacao
                 {
-                    MovimentacaoId = Guid.NewGuid(),
+                    Id = Guid.NewGuid(),
                     Data = new DateOnly(2025, 6, 1),
                     Descricao = "Compra",
                     Valor = 100,
-                    Instituicao = new InstituicaoResponse(),
+                    Instituicao = new Instituicao(),
                     Categoria = CriarCategoriaResponse(),
-                    Periodo = new PeriodoResponse()
+                    Periodo = new Periodo()
                 }
             };
 
+        _mockConverterResponse.Setup(conv => conv.BulkConvert(expected))
+            .Returns(expected.Select(m => new MovimentacaoResponse
+            {
+                MovimentacaoId = m.Id,
+                Data = m.Data,
+                Descricao = m.Descricao,
+                Valor = m.Valor,
+                Instituicao = new InstituicaoResponse { InstituicaoId = m.InstituicaoId },
+                Categoria = new CategoriaResponse { CategoriaId = m.CategoriaId, Nome="" },
+                Periodo = new PeriodoResponse() { PeriodoId = m.PeriodoId }
+            }).ToList());
         _mockMovRepo.Setup(repo => repo.ListarAsync(instituicaoId, periodoId)).ReturnsAsync(expected);
+        
 
         // Act
         var result = await _controller.ListarAsync(instituicaoId, periodoId);
 
         // Assert
         var ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(expected, ok.Value);
+        var returnedList = Assert.IsType<List<MovimentacaoResponse>>(ok.Value);
+        Assert.Equal(expected.Count, returnedList.Count);
+        
+        for (int i = 0; i < expected.Count; i++)
+        {
+            Assert.Equal(expected[i].Id, returnedList[i].MovimentacaoId);
+            Assert.Equal(expected[i].Data, returnedList[i].Data);
+            Assert.Equal(expected[i].Descricao, returnedList[i].Descricao);
+            Assert.Equal(expected[i].Valor, returnedList[i].Valor);
+            Assert.Equal(expected[i].InstituicaoId, returnedList[i].Instituicao.InstituicaoId);
+            Assert.Equal(expected[i].CategoriaId, returnedList[i].Categoria.CategoriaId);
+            Assert.Equal(expected[i].PeriodoId, returnedList[i].Periodo.PeriodoId);
+        }
     }
 
     [Fact]
@@ -64,7 +96,7 @@ public class MovimentacaoControllerUnitTests
     {
         // Arrange
         var request = CriarMovimentacaoRequest();
-        _mockPeriodoRepo.Setup(r => r.ObterAsync(request.PeriodoId)).ReturnsAsync((PeriodoResponse?)null);
+        _mockPeriodoRepo.Setup(r => r.ObterAsync(request.PeriodoId)).ReturnsAsync((Periodo?)null);
 
         // Act
         var result = await _controller.AdicionarAsync(request);
@@ -79,8 +111,8 @@ public class MovimentacaoControllerUnitTests
     {
         // Arrange
         var request = CriarMovimentacaoRequest();
-        _mockPeriodoRepo.Setup(r => r.ObterAsync(request.PeriodoId)).ReturnsAsync(new PeriodoResponse());
-        _mockInstRepo.Setup(r => r.ObterAsync(request.InstituicaoId)).ReturnsAsync((InstituicaoResponse?)null);
+        _mockPeriodoRepo.Setup(r => r.ObterAsync(request.PeriodoId)).ReturnsAsync(new Periodo());
+        _mockInstRepo.Setup(r => r.ObterAsync(request.InstituicaoId)).ReturnsAsync((Instituicao?)null);
 
         // Act
         var result = await _controller.AdicionarAsync(request);
@@ -95,9 +127,9 @@ public class MovimentacaoControllerUnitTests
     {
         // Arrange
         var request = CriarMovimentacaoRequest();
-        _mockPeriodoRepo.Setup(r => r.ObterAsync(request.PeriodoId)).ReturnsAsync(new PeriodoResponse());
-        _mockInstRepo.Setup(r => r.ObterAsync(request.InstituicaoId)).ReturnsAsync(new InstituicaoResponse());
-        _mockCatRepo.Setup(r => r.ObterAsync(request.CategoriaId)).ReturnsAsync((CategoriaResponse?)null);
+        _mockPeriodoRepo.Setup(r => r.ObterAsync(request.PeriodoId)).ReturnsAsync(new Periodo());
+        _mockInstRepo.Setup(r => r.ObterAsync(request.InstituicaoId)).ReturnsAsync(new Instituicao());
+        _mockCatRepo.Setup(r => r.ObterAsync(request.CategoriaId)).ReturnsAsync((Categoria?)null);
 
         // Act
         var result = await _controller.AdicionarAsync(request);
@@ -116,12 +148,36 @@ public class MovimentacaoControllerUnitTests
         var request = CriarMovimentacaoRequest();
         var saldoInicial = 500m;
 
-        _mockPeriodoRepo.Setup(r => r.ObterAsync(request.PeriodoId)).ReturnsAsync(new PeriodoResponse());
-        _mockInstRepo.Setup(r => r.ObterAsync(request.InstituicaoId)).ReturnsAsync(new InstituicaoResponse
+        _mockConverterRequest.Setup(conv => conv.Convert(request))
+            .Returns(new Movimentacao
+            {
+                Id = Guid.NewGuid(),
+                Data = request.Data,
+                Descricao = request.Descricao,
+                Valor = request.Valor,
+                InstituicaoId = request.InstituicaoId,
+                CategoriaId = request.CategoriaId,
+                PeriodoId = request.PeriodoId
+            });
+
+        _mockConverterResponse.Setup(conv => conv.Convert(It.IsAny<Movimentacao>()))
+            .Returns((Movimentacao m) => new MovimentacaoResponse
+            {
+                MovimentacaoId = m.Id,
+                Data = m.Data,
+                Descricao = m.Descricao,
+                Valor = m.Valor,
+                Instituicao = new InstituicaoResponse { InstituicaoId = m.InstituicaoId },
+                Categoria = new CategoriaResponse { CategoriaId = m.CategoriaId, Nome = "" },
+                Periodo = new PeriodoResponse() { PeriodoId = m.PeriodoId }
+            });
+
+        _mockPeriodoRepo.Setup(r => r.ObterAsync(request.PeriodoId)).ReturnsAsync(new Periodo());
+        _mockInstRepo.Setup(r => r.ObterAsync(request.InstituicaoId)).ReturnsAsync(new Instituicao
         {
-            InstituicaoId = request.InstituicaoId,
-            Saldo = saldoInicial,
-            Credito = isCredito
+            Id = request.InstituicaoId,
+            SaldoAtual = saldoInicial,
+            InstituicaoCredito = isCredito
         });
         _mockCatRepo.Setup(r => r.ObterAsync(request.CategoriaId)).ReturnsAsync(CriarCategoriaResponse());
 
@@ -130,7 +186,7 @@ public class MovimentacaoControllerUnitTests
 
         // Assert
         Assert.IsType<CreatedResult>(result);
-        _mockMovRepo.Verify(r => r.AdicionarAsync(request), Times.Once);
+        _mockMovRepo.Verify(r => r.AdicionarAsync(It.Is<Movimentacao>(s => s.Descricao == request.Descricao)), Times.Once);
         _mockInstRepo.Verify(r => r.AtualizarSaldoAsync(request.InstituicaoId, saldoInicial + expectedDelta), Times.Once);
     }
 
@@ -140,12 +196,12 @@ public class MovimentacaoControllerUnitTests
         // Arrange
         var request = CriarMovimentacaoRequest();
         var saldoInicial = 200m;
-        _mockPeriodoRepo.Setup(r => r.ObterAsync(request.PeriodoId)).ReturnsAsync(new PeriodoResponse());
-        _mockInstRepo.Setup(r => r.ObterAsync(request.InstituicaoId)).ReturnsAsync(new InstituicaoResponse
+        _mockPeriodoRepo.Setup(r => r.ObterAsync(request.PeriodoId)).ReturnsAsync(new Periodo());
+        _mockInstRepo.Setup(r => r.ObterAsync(request.InstituicaoId)).ReturnsAsync(new Instituicao
         {
-            InstituicaoId = request.InstituicaoId,
-            Saldo = saldoInicial,
-            Credito = false
+            Id = request.InstituicaoId,
+            SaldoAtual = saldoInicial,
+            InstituicaoCredito = false
         });
         _mockCatRepo.Setup(r => r.ObterAsync(request.CategoriaId)).ReturnsAsync(CriarCategoriaResponse());
 
@@ -162,7 +218,7 @@ public class MovimentacaoControllerUnitTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        _mockMovRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync((MovimentacaoResponse?)null);
+        _mockMovRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync((Movimentacao?)null);
 
         // Act
         var result = await _controller.DeletarAsync(id);
@@ -178,15 +234,17 @@ public class MovimentacaoControllerUnitTests
         // Arrange
         var id = Guid.NewGuid();
         var instituicaoId = Guid.NewGuid();
-        var mov = new MovimentacaoResponse {
-            MovimentacaoId = id,
+        var mov = new Movimentacao {
+            Id = id,
             Valor = 100,
-            Instituicao = new InstituicaoResponse { InstituicaoId = instituicaoId }
+            Instituicao = new Instituicao { Id = instituicaoId },
+            InstituicaoId = instituicaoId
         };
-        var inst = new InstituicaoResponse {
-            InstituicaoId = instituicaoId,
-            Saldo = 500,
-            Credito = false
+        var inst = new Instituicao {
+            Id = instituicaoId,
+            SaldoInicial = 500,
+            SaldoAtual = 500,
+            InstituicaoCredito = false
         };
         _mockMovRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync(mov);
         _mockInstRepo.Setup(r => r.ObterAsync(instituicaoId)).ReturnsAsync(inst);
@@ -205,14 +263,14 @@ public class MovimentacaoControllerUnitTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        var mov = new MovimentacaoResponse
+        var mov = new Movimentacao
         {
-            MovimentacaoId = id,
+            Id = id,
             Valor = 100,
-            Instituicao = new InstituicaoResponse { InstituicaoId = Guid.NewGuid() }
+            Instituicao = new Instituicao { Id = Guid.NewGuid() }
         };
         _mockMovRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync(mov);
-        _mockInstRepo.Setup(r => r.ObterAsync(mov.Instituicao.InstituicaoId)).ReturnsAsync((InstituicaoResponse?)null);
+        _mockInstRepo.Setup(r => r.ObterAsync(mov.Instituicao.Id)).ReturnsAsync((Instituicao?)null);
 
         // Act
         var result = await _controller.DeletarAsync(id);
@@ -229,21 +287,24 @@ public class MovimentacaoControllerUnitTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        var mov = new MovimentacaoResponse
+        var instId = Guid.NewGuid();
+        var mov = new Movimentacao
         {
-            MovimentacaoId = id,
+            Id = id,
             Valor = 100,
-            Instituicao = new InstituicaoResponse { InstituicaoId = Guid.NewGuid() }
+            Instituicao = new Instituicao { Id = instId },
+            InstituicaoId = instId
         };
         var saldoInicial = 500m;
-        var inst = new InstituicaoResponse
+        var inst = new Instituicao
         {
-            InstituicaoId = mov.Instituicao.InstituicaoId,
-            Saldo = saldoInicial,
-            Credito = isCredito
+            Id = mov.Instituicao.Id,
+            SaldoInicial = saldoInicial,
+            SaldoAtual = saldoInicial,
+            InstituicaoCredito = isCredito
         };
         _mockMovRepo.Setup(r => r.ObterAsync(id)).ReturnsAsync(mov);
-        _mockInstRepo.Setup(r => r.ObterAsync(mov.Instituicao.InstituicaoId)).ReturnsAsync(inst);
+        _mockInstRepo.Setup(r => r.ObterAsync(instId)).ReturnsAsync(inst);
 
         // Act
         var result = await _controller.DeletarAsync(id);
@@ -251,7 +312,7 @@ public class MovimentacaoControllerUnitTests
         // Assert
         var ok = Assert.IsType<OkResult>(result);
         _mockMovRepo.Verify(r => r.DeletarAsync(id), Times.Once);
-        _mockInstRepo.Verify(r => r.AtualizarSaldoAsync(inst.InstituicaoId, saldoInicial + expectedDelta), Times.Once);
+        _mockInstRepo.Verify(r => r.AtualizarSaldoAsync(instId, saldoInicial + expectedDelta), Times.Once);
     }
 
     private MovimentacaoRequest CriarMovimentacaoRequest()
@@ -267,11 +328,11 @@ public class MovimentacaoControllerUnitTests
         };
     }
 
-    private CategoriaResponse CriarCategoriaResponse()
+    private Categoria CriarCategoriaResponse()
     {
-        return new CategoriaResponse
+        return new Categoria
         {
-            CategoriaId = Guid.NewGuid(),
+            Id = Guid.NewGuid(),
             Nome = "Alimentos",
             ParentId = null
         };

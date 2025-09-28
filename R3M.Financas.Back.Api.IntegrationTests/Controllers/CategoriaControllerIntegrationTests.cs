@@ -1,5 +1,5 @@
-﻿using R3M.Financas.Back.Api.Dto;
-using R3M.Financas.Back.Api.IntegrationTests.Fixtures;
+﻿using R3M.Financas.Back.Api.IntegrationTests.Fixtures;
+using R3M.Financas.Back.Domain.Dtos;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -97,7 +97,6 @@ public class CategoriaControllerIntegrationTests : IntegrationTestsBase
         var response = await _httpClient.PostAsJsonAsync(ROTA_CATEGORIAS, request);
 
         // Assert
-        response.EnsureSuccessStatusCode();
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
