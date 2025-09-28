@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using R3M.Financas.Back.Api.Data;
-using R3M.Financas.Back.Api.Modelos;
+using R3M.Financas.Back.Domain.Models;
+using R3M.Financas.Back.Repository.Contexts;
 using System.Text.Json;
 
 namespace R3M.Financas.Back.Api.IntegrationTests.Fixtures;

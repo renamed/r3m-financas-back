@@ -1,6 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using R3M.Financas.Back.Api.Data;
-using R3M.Financas.Back.Api.Interfaces;
+using R3M.Financas.Back.Application.Converters;
+using R3M.Financas.Back.Application.Interfaces;
+using R3M.Financas.Back.Domain.Dtos;
+using R3M.Financas.Back.Domain.Models;
+using R3M.Financas.Back.Repository.Contexts;
+using R3M.Financas.Back.Repository.Data;
+using R3M.Financas.Back.Repository.Interfaces;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -43,6 +48,16 @@ builder.Services.AddScoped<IPeriodoRepository, PeriodoRepository>();
 builder.Services.AddScoped<IInstituicaoRepository, InstituicaoRepository>();
 builder.Services.AddScoped<IMovimentacaoRepository, MovimentacaoRepository>();
 builder.Services.AddScoped<ITipoCategoriaRepository, TipoCategoriaRepository>();
+
+builder.Services.AddScoped<IConverter<PeriodoResponse, Periodo>, PeriodoConverter>();
+builder.Services.AddScoped<IConverter<CategoriaResponse, Categoria>, CategoriaResponseConverter>();
+builder.Services.AddScoped<IConverter<CategoriaRequest, Categoria>, CategoriaRequestConverter>();
+builder.Services.AddScoped<IConverter<InstituicaoResponse, Instituicao>, InstituicaoResponseConverter>();
+builder.Services.AddScoped<IConverter<InstituicaoRequest, Instituicao>, InstituicaoRequestConverter>();
+builder.Services.AddScoped<IConverter<TipoCategoriaResponse, TipoCategoria>, TipoCategoriaConverter>();
+builder.Services.AddScoped<IConverter<MovimentacaoRequest, Movimentacao>, MovimentacaoRequestConverter>();
+builder.Services.AddScoped<IConverter<MovimentacaoResponse, Movimentacao>, MovimentacaoResponseConverter>();
+
 
 builder.Services.AddDbContext<FinancasContext>(opt => 
 {

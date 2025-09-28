@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using R3M.Financas.Back.Api.Data;
+using R3M.Financas.Back.Repository.Contexts;
 
 namespace R3M.Financas.Back.Api.IntegrationTests.Fixtures;
 
