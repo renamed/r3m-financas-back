@@ -47,12 +47,29 @@ public class PeriodoControllerUnitTests
         _mockRepo.Setup(repo => repo.ListarAsync(anoBase))
                  .ReturnsAsync(expected);
 
+        _mockConverter.Setup(c => c.BulkConvert(expected)).Returns(expected.Select(p => new PeriodoResponse
+        {
+            Fim = p.Fim,
+            Inicio = p.Inicio,
+            Nome = p.Nome,
+            PeriodoId = p.Id
+        }).ToList());
+
         // Act
         var result = await _controller.ListarAsync(anoBase);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(expected, okResult.Value);
+        var resultList = Assert.IsType<List<PeriodoResponse>>(okResult.Value);
+
+        Assert.Equal(expected.Count, resultList.Count);
+        for (int i = 0; i < expected.Count; i++)
+        {
+            Assert.Equal(expected[i].Id, resultList[i].PeriodoId);
+            Assert.Equal(expected[i].Nome, resultList[i].Nome);
+            Assert.Equal(expected[i].Inicio, resultList[i].Inicio);
+            Assert.Equal(expected[i].Fim, resultList[i].Fim);
+        }
     }
 
     [Fact]

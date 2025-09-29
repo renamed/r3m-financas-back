@@ -23,7 +23,7 @@ public class PeriodoController : ControllerBase
     public async Task<IActionResult> ListarAsync(int anoBase)
     {
         var periodos = await periodoRepository.ListarAsync(anoBase);
-        return Ok(periodos);
+        return Ok(converter.BulkConvert(periodos));
     }
 
     [HttpGet("{id:Guid}")]
