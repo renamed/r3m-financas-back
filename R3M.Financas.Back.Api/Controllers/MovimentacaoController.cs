@@ -17,8 +17,9 @@ public class MovimentacaoController : ControllerBase
 
     private readonly IConverter<MovimentacaoRequest, Movimentacao> converterRequest;
     private readonly IConverter<MovimentacaoResponse, Movimentacao> converterResponse;
+    private readonly IConverter<SomarMovimentacoesResponse, SomarMovimentacoesDto> converterSomaResponse;
 
-    public MovimentacaoController(IMovimentacaoRepository movimentacaoRepository, IPeriodoRepository periodoRepository, IInstituicaoRepository instituicaoRepository, ICategoriaRepository categoriaRepository, IConverter<MovimentacaoRequest, Movimentacao> converterRequest, IConverter<MovimentacaoResponse, Movimentacao> converterResponse)
+    public MovimentacaoController(IMovimentacaoRepository movimentacaoRepository, IPeriodoRepository periodoRepository, IInstituicaoRepository instituicaoRepository, ICategoriaRepository categoriaRepository, IConverter<MovimentacaoRequest, Movimentacao> converterRequest, IConverter<MovimentacaoResponse, Movimentacao> converterResponse, IConverter<SomarMovimentacoesResponse, SomarMovimentacoesDto> converterSomaResponse)
     {
         this.movimentacaoRepository = movimentacaoRepository;
         this.periodoRepository = periodoRepository;
@@ -26,6 +27,7 @@ public class MovimentacaoController : ControllerBase
         this.categoriaRepository = categoriaRepository;
         this.converterRequest = converterRequest;
         this.converterResponse = converterResponse;
+        this.converterSomaResponse = converterSomaResponse;
     }
 
     [HttpGet("{instituicaoId:guid}/{periodoId:guid}")]
@@ -76,4 +78,38 @@ public class MovimentacaoController : ControllerBase
         return Ok();
     }
 
+    [HttpGet("periodo/{periodoId}")]
+    public async Task<IActionResult> SomarFilhosPorPeriodo(Guid periodoId,
+        [FromQuery] Guid? categoriaPaiId,
+        [FromQuery] Guid? instituicaoId,
+        CancellationToken ct)
+    {
+
+        if (categoriaPaiId.HasValue)
+        {
+            var categoria = await categoriaRepository.ObterAsync(categoriaPaiId.Value);
+            if (categoria is null)
+            {
+                return NotFound(nameof(categoria));
+            }
+        }
+
+        if (await periodoRepository.ObterAsync(periodoId) is null)
+        {
+            return NotFound("periodo");
+        }
+
+        if (instituicaoId.HasValue)
+        {
+            var instituicao = await instituicaoRepository.ObterAsync(instituicaoId.Value);
+            if (instituicao is null)
+            {
+                return NotFound(nameof(instituicao));
+            }
+        }
+
+        var soma = await movimentacaoRepository.SomarAsync(periodoId, categoriaPaiId, instituicaoId, ct);
+
+        return Ok(converterSomaResponse.BulkConvert(soma));
+    }
 }

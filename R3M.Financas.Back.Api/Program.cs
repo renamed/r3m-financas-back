@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using R3M.Financas.Back.Application.Converters;
 using R3M.Financas.Back.Application.Interfaces;
 using R3M.Financas.Back.Domain.Dtos;
@@ -57,6 +58,7 @@ builder.Services.AddScoped<IConverter<InstituicaoRequest, Instituicao>, Institui
 builder.Services.AddScoped<IConverter<TipoCategoriaResponse, TipoCategoria>, TipoCategoriaConverter>();
 builder.Services.AddScoped<IConverter<MovimentacaoRequest, Movimentacao>, MovimentacaoRequestConverter>();
 builder.Services.AddScoped<IConverter<MovimentacaoResponse, Movimentacao>, MovimentacaoResponseConverter>();
+builder.Services.AddScoped<IConverter<SomarMovimentacoesResponse, SomarMovimentacoesDto>, SomarMovimentacoesConverter>();
 
 
 builder.Services.AddDbContext<FinancasContext>(opt => 

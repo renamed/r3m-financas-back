@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using R3M.Financas.Back.Api.IntegrationTests.Fixtures;
 using R3M.Financas.Back.Domain.Dtos;
 using System.Net;
@@ -29,7 +30,7 @@ public class MovimentacaoControllerIntegrationTests : IntegrationTestsBase
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<IEnumerable<MovimentacaoResponse>>();
-        Assert.Single(body);
+        Assert.Equal(2, body.Count());
     }
 
     [Fact]
@@ -144,5 +145,52 @@ public class MovimentacaoControllerIntegrationTests : IntegrationTestsBase
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SomaAsync_DeveMostrarFilhos()
+    {
+        // Arrange
+        using var scope = GetContext();
+        const string PeriodoId = "7ffe9be3-0157-47e7-8f32-72f39ffed1ff";
+        const string CategoriaPaiId = "5bc2402a-8025-4e24-b75c-43346c942cf8";
+        const string InstituicaoId = "d2e81048-f5ec-49af-b053-30e61a4bafcd";
+        var token = new CancellationTokenSource();
+        token.CancelAfter(TimeSpan.FromSeconds(30));
+        
+        // Act
+        var response = await _httpClient.GetAsync($"{ROTA_MOVIMENTACOES}/periodo/{PeriodoId}?categoriaPaiId={CategoriaPaiId}&instituicaoId={InstituicaoId}", token.Token);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = JsonSerializer.Deserialize<List<SomarMovimentacoesResponse>>(await response.Content.ReadAsStringAsync());
+        Assert.Equal(2, body.Count);
+
+        Assert.Contains(body, x => x.Valor == -130 && x.Categoria.Nome == "Abacate");
+        Assert.Contains(body, x => x.Valor == -140 && x.Categoria.Nome == "Abacaxi");
+    }
+
+    [Fact]
+    public async Task SomaAsync_DeveSomarFilhos()
+    {
+        // Arrange
+        using var scope = GetContext();
+        const string PeriodoId = "7ffe9be3-0157-47e7-8f32-72f39ffed1ff";
+        const string CategoriaPaiId = "a6a421cb-1d4a-4cf7-b975-767a1bc041a2";
+        const string InstituicaoId = "d2e81048-f5ec-49af-b053-30e61a4bafcd";
+        var token = new CancellationTokenSource();
+        token.CancelAfter(TimeSpan.FromSeconds(30));
+
+        // Act
+        var response = await _httpClient.GetAsync($"{ROTA_MOVIMENTACOES}/periodo/{PeriodoId}?categoriaPaiId={CategoriaPaiId}&instituicaoId={InstituicaoId}", token.Token);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = JsonSerializer.Deserialize<List<SomarMovimentacoesResponse>>(await response.Content.ReadAsStringAsync());
+        
+        Assert.Single(body);
+        Assert.Contains(body, x => x.Valor == -270 && x.Categoria.Nome == "Fruta");
     }
 }

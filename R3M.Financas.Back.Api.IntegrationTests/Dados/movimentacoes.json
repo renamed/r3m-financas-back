@@ -7,5 +7,33 @@
     "InstituicaoId": "d2e81048-f5ec-49af-b053-30e61a4bafcd",
     "CategoriaId": "ec4ce75f-6eae-41cd-892a-1567dd8f223e",
     "PeriodoId": "7ffe9be3-0157-47e7-8f32-72f39ffed1ff"
+  },
+  {
+    "Id": "5190ec67-9b21-4a0e-a0a5-1dae5ce40e2c",
+    "Data": "2025-03-03",
+    "Descricao": "Mercado",
+    "Valor": -140,
+    "InstituicaoId": "d2e81048-f5ec-49af-b053-30e61a4bafcd",
+    "CategoriaId": "c91fc711-03a3-46da-9f40-8b745beecd90",
+    "PeriodoId": "7ffe9be3-0157-47e7-8f32-72f39ffed1ff"
+  },
+  {
+    "Id": "5190ec67-9b21-4a0e-a0a5-1dae5ce40e2d",
+    "Data": "2025-07-30",
+    "Descricao": "Mercado",
+    "Valor": -150,
+    "InstituicaoId": "d2e81048-f5ec-49af-b053-30e61a4bafcd",
+    "CategoriaId": "c91fc711-03a3-46da-9f40-8b745beecd90",
+    "PeriodoId": "cf1c51c3-36b6-43b7-bad4-44cd50cb048d"
+  },
+  {
+    "Id": "5190ec67-9b21-4a0e-a0a5-1dae5ce40e2e",
+    "Data": "2025-03-02",
+    "Descricao": "Mercado",
+    "Valor": -130,
+    "InstituicaoId": "08e1442c-a537-4f2c-9aaa-e63345e053cc",
+    "CategoriaId": "ec4ce75f-6eae-41cd-892a-1567dd8f223e",
+    "PeriodoId": "7ffe9be3-0157-47e7-8f32-72f39ffed1ff"
   }
 ]
+
