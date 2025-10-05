@@ -162,11 +162,14 @@ public class MovimentacaoControllerIntegrationTests : IntegrationTestsBase
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var body = JsonSerializer.Deserialize<List<SomarMovimentacoesResponse>>(await response.Content.ReadAsStringAsync());
-        Assert.Equal(2, body.Count);
+        var body = JsonSerializer.Deserialize<RespostaAbstrata<List<SomarMovimentacoesResponse>>>(await response.Content.ReadAsStringAsync());
 
-        Assert.Contains(body, x => x.Valor == -130 && x.Categoria.Nome == "Abacate");
-        Assert.Contains(body, x => x.Valor == -140 && x.Categoria.Nome == "Abacaxi");
+        Assert.Equal(nameof(SomarMovimentacoesResponse), body.NomeTipo);
+
+        Assert.Equal(2, body.Resposta.Count);
+
+        Assert.Contains(body.Resposta, x => x.Valor == -130 && x.Categoria.Nome == "Abacate");
+        Assert.Contains(body.Resposta, x => x.Valor == -140 && x.Categoria.Nome == "Abacaxi");
     }
 
     [Fact]
@@ -184,9 +187,11 @@ public class MovimentacaoControllerIntegrationTests : IntegrationTestsBase
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var body = JsonSerializer.Deserialize<List<SomarMovimentacoesResponse>>(await response.Content.ReadAsStringAsync());
-        
-        Assert.Single(body);
-        Assert.Contains(body, x => x.Valor == -270 && x.Categoria.Nome == "Fruta");
+        var body = JsonSerializer.Deserialize<RespostaAbstrata<List<SomarMovimentacoesResponse>>>(await response.Content.ReadAsStringAsync());
+
+        Assert.Equal(nameof(SomarMovimentacoesResponse), body.NomeTipo);
+
+        Assert.Single(body.Resposta);
+        Assert.Contains(body.Resposta, x => x.Valor == -270 && x.Categoria.Nome == "Fruta");
     }
 }

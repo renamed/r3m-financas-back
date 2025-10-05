@@ -330,7 +330,7 @@ public class MovimentacaoControllerUnitTests
         _mockCatRepo.Setup(r => r.ObterAsync(categoriaId)).ReturnsAsync((Categoria?)null);
 
         // Act
-        var result = await _controller.SomarFilhosPorPeriodo(periodoId, categoriaId, null, CancellationToken.None);
+        var result = await _controller.SomarFilhosPorPeriodo(periodoId, categoriaId, null, false, CancellationToken.None);
 
         // Assert
         var notFound = Assert.IsType<NotFoundObjectResult>(result);
@@ -345,7 +345,7 @@ public class MovimentacaoControllerUnitTests
         _mockPeriodoRepo.Setup(r => r.ObterAsync(periodoId)).ReturnsAsync((Periodo?)null);
 
         // Act
-        var result = await _controller.SomarFilhosPorPeriodo(periodoId, null, null, CancellationToken.None);
+        var result = await _controller.SomarFilhosPorPeriodo(periodoId, null, null, false, CancellationToken.None);
 
         // Assert
         var notFound = Assert.IsType<NotFoundObjectResult>(result);
@@ -363,7 +363,7 @@ public class MovimentacaoControllerUnitTests
         _mockInstRepo.Setup(r => r.ObterAsync(instId)).ReturnsAsync((Instituicao?)null);
 
         // Act
-        var result = await _controller.SomarFilhosPorPeriodo(periodoId, null, instId, CancellationToken.None);
+        var result = await _controller.SomarFilhosPorPeriodo(periodoId, null, instId, false, CancellationToken.None);
 
         // Assert
         var notFound = Assert.IsType<NotFoundObjectResult>(result);
@@ -403,7 +403,10 @@ public class MovimentacaoControllerUnitTests
 
         _mockPeriodoRepo.Setup(r => r.ObterAsync(periodoId)).ReturnsAsync(new Periodo());
         _mockInstRepo.Setup(r => r.ObterAsync(instId)).ReturnsAsync(new Instituicao());
-        _mockCatRepo.Setup(r => r.ObterAsync(catId)).ReturnsAsync(new Categoria());
+        _mockCatRepo.Setup(r => r.ObterAsync(catId)).ReturnsAsync(new Categoria()
+        {
+            Filhos = [new Categoria(), new Categoria()]
+        });
 
         // Agora sim: o repositório retorna DTO (não Response)
         _mockMovRepo.Setup(r => r.SomarAsync(periodoId, catId, instId, It.IsAny<CancellationToken>()))
@@ -414,13 +417,15 @@ public class MovimentacaoControllerUnitTests
             .Returns(somaResponseFake);
 
         // Act
-        var result = await _controller.SomarFilhosPorPeriodo(periodoId, catId, instId, CancellationToken.None);
+        var result = await _controller.SomarFilhosPorPeriodo(periodoId, catId, instId, false, CancellationToken.None);
 
         // Assert
         var ok = Assert.IsType<OkObjectResult>(result);
-        var value = Assert.IsType<List<SomarMovimentacoesResponse>>(ok.Value);
-        Assert.Single(value);
-        Assert.Equal(50, value[0].Valor);
+        var value = Assert.IsType<RespostaAbstrata<IEnumerable<SomarMovimentacoesResponse>>>(ok.Value);
+
+        Assert.Equal(nameof(SomarMovimentacoesResponse), value.NomeTipo);
+        Assert.Single(value.Resposta);
+        Assert.Equal(50, value.Resposta.ToList()[0].Valor);
     }
 
     private MovimentacaoRequest CriarMovimentacaoRequest()

@@ -14,4 +14,5 @@ public interface IMovimentacaoRepository
     Task<int> ContarPorCategoriaAsync(IList<Guid> categoriaId);
     Task<IDbContextTransaction> IniciarTransacao(IsolationLevel isolationLevel, CancellationToken cs = default);
     Task<IReadOnlyList<SomarMovimentacoesDto>> SomarAsync(Guid periodoId, Guid? categoriaPaiId, Guid? instituicaoId, CancellationToken ct = default);
+    Task<IReadOnlyList<Movimentacao>> ListarAsync(Guid periodoId, Guid? instituicaoId, Guid? categoriaId);
 }

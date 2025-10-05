@@ -3,6 +3,7 @@ using R3M.Financas.Back.Application.Interfaces;
 using R3M.Financas.Back.Domain.Dtos;
 using R3M.Financas.Back.Domain.Models;
 using R3M.Financas.Back.Repository.Interfaces;
+using System;
 
 namespace R3M.Financas.Back.Api.Controllers;
 
@@ -82,9 +83,10 @@ public class MovimentacaoController : ControllerBase
     public async Task<IActionResult> SomarFilhosPorPeriodo(Guid periodoId,
         [FromQuery] Guid? categoriaPaiId,
         [FromQuery] Guid? instituicaoId,
-        CancellationToken ct)
+        [FromQuery] bool incluirCategoriaZerada = false,
+        CancellationToken ct = default)
     {
-
+        bool categoriaFolha = false;
         if (categoriaPaiId.HasValue)
         {
             var categoria = await categoriaRepository.ObterAsync(categoriaPaiId.Value);
@@ -92,6 +94,8 @@ public class MovimentacaoController : ControllerBase
             {
                 return NotFound(nameof(categoria));
             }
+                        
+            categoriaFolha = categoria.Filhos == null || categoria.Filhos.Count == 0;
         }
 
         if (await periodoRepository.ObterAsync(periodoId) is null)
@@ -108,8 +112,24 @@ public class MovimentacaoController : ControllerBase
             }
         }
 
-        var soma = await movimentacaoRepository.SomarAsync(periodoId, categoriaPaiId, instituicaoId, ct);
+        if (categoriaFolha)
+        {
+            var movimentacoes = await movimentacaoRepository.ListarAsync(periodoId, instituicaoId, categoriaPaiId);
+            var response = RespostaAbstrata<IEnumerable<MovimentacaoResponse>>.Criar(converterResponse.BulkConvert(movimentacoes), nameof(MovimentacaoResponse));
 
-        return Ok(converterSomaResponse.BulkConvert(soma));
+            return Ok(response);
+        }
+        else
+        {
+            var soma = await movimentacaoRepository.SomarAsync(periodoId, categoriaPaiId, instituicaoId, ct);
+
+            Func<SomarMovimentacoesDto, bool> predicado
+                = incluirCategoriaZerada
+                ? (s) => true
+                : (s) => s.Valor != 0;
+
+            var response = RespostaAbstrata<IEnumerable<SomarMovimentacoesResponse>>.Criar(converterSomaResponse.BulkConvert(soma.Where(predicado)), nameof(SomarMovimentacoesResponse));
+            return Ok(response);
+        }
     }
 }

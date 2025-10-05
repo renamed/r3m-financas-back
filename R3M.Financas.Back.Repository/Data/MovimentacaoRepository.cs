@@ -34,6 +34,19 @@ public class MovimentacaoRepository : IMovimentacaoRepository
             .ToListAsync();
     }
 
+    public async Task<IReadOnlyList<Movimentacao>> ListarAsync(Guid periodoId, Guid? instituicaoId, Guid? categoriaId)
+    {
+        return await financasContext
+            .Movimentacoes
+            .Include(i => i.Instituicao)
+            .Include(i => i.Categoria)
+            .Include(i => i.Periodo)
+            .Where(w => (instituicaoId == null || w.InstituicaoId == instituicaoId)
+                    && (categoriaId == null || w.CategoriaId == categoriaId)
+                    && w.PeriodoId == periodoId)
+            .ToListAsync();
+    }
+
     public async Task AdicionarAsync(Movimentacao movimentacao)
     {
         financasContext.Movimentacoes.Add(movimentacao);
