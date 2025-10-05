@@ -126,7 +126,9 @@ public class CategoriaRepository : ICategoriaRepository
     public async Task<Categoria?> ObterAsync(Guid id)
     {
         return await financasContext.Categorias
-            .FindAsync(id);
+            .Include(x => x.Filhos)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id);
     }
 
     public async Task AddAsync(Categoria categoria)
