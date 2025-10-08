@@ -115,6 +115,10 @@ public class MovimentacaoController : ControllerBase
         if (categoriaFolha)
         {
             var movimentacoes = await movimentacaoRepository.ListarAsync(periodoId, instituicaoId, categoriaPaiId);
+            movimentacoes = [.. movimentacoes
+                    .OrderByDescending(x => x.Data)
+                    .ThenByDescending(x => x.Valor)];
+
             var response = RespostaAbstrata<IEnumerable<MovimentacaoResponse>>.Criar(converterResponse.BulkConvert(movimentacoes), nameof(MovimentacaoResponse));
 
             return Ok(response);
@@ -127,6 +131,10 @@ public class MovimentacaoController : ControllerBase
                 = incluirCategoriaZerada
                 ? (s) => true
                 : (s) => s.Valor != 0;
+
+            soma = [.. soma
+                    .OrderByDescending(x => x.Valor)
+                    .ThenByDescending(x => x.Nome)];
 
             var response = RespostaAbstrata<IEnumerable<SomarMovimentacoesResponse>>.Criar(converterSomaResponse.BulkConvert(soma.Where(predicado)), nameof(SomarMovimentacoesResponse));
             return Ok(response);
