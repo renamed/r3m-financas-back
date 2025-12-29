@@ -6,4 +6,5 @@ public interface IPeriodoRepository
 {
     Task<IReadOnlyList<Periodo>> ListarAsync(int anoBase);
     Task<Periodo?> ObterAsync(Guid id);
+    Task<Periodo?> ObterAsync(string nome);
 }

@@ -22,7 +22,23 @@ public class PeriodoController : ControllerBase
     [HttpGet("{anoBase:int}")]
     public async Task<IActionResult> ListarAsync(int anoBase)
     {
-        var periodos = await periodoRepository.ListarAsync(anoBase);
+        var periodos = new List<Periodo>(await periodoRepository.ListarAsync(anoBase));
+        
+        if (DateTime.UtcNow.Month == 1)
+        {
+            var periodoAMais = await periodoRepository.ObterAsync((anoBase - 1) + "12");
+            if (periodoAMais is not null)
+                periodos.Add(periodoAMais);
+        }
+
+        if (DateTime.UtcNow.Month == 12)
+        {
+            var periodoAMais = await periodoRepository.ObterAsync((anoBase + 1) + "02");
+            if (periodoAMais is not null)
+                periodos.Add(periodoAMais);
+        }
+
+
         return Ok(converter.BulkConvert(periodos));
     }
 

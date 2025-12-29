@@ -17,11 +17,17 @@ public class PeriodoRepository : IPeriodoRepository
 
     public async Task<IReadOnlyList<Periodo>> ListarAsync(int anoBase)
     {
+
         return await financasContext.Periodos.Where(p => p.Inicio.Year == anoBase || p.Fim.Year == anoBase).ToListAsync();
     }
 
     public async Task<Periodo?> ObterAsync(Guid id)
     {
         return await financasContext.Periodos.FindAsync(id);
+    }
+
+    public async Task<Periodo?> ObterAsync(string nome)
+    {
+        return await financasContext.Periodos.FirstOrDefaultAsync(x => x.Nome == nome);
     }
 }
